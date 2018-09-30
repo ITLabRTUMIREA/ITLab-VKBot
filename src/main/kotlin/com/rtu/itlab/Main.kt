@@ -4,10 +4,8 @@ import io.ktor.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 
-const val PORT = 8080
-
 private const val portArg = "-port"
-private var port = 8878
+private var port = 8080
 
 fun main(args: Array<String>) {
 
@@ -16,5 +14,5 @@ fun main(args: Array<String>) {
     if(portObtainedInArgs)
         port = args[0].split("=").last().trim().toInt()
 
-    embeddedServer(Netty, PORT, module = Application::main).start(wait = true)
+    embeddedServer(Netty, port, module = Application::main).start(wait = true)
 }

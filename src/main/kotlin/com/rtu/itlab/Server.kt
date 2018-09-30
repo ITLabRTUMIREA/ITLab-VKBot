@@ -2,10 +2,7 @@ package com.rtu.itlab
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.rtu.itlab.Responses.BotEquipmentAdded
-import com.rtu.itlab.Responses.BotEventChange
-import com.rtu.itlab.Responses.BotEventDeleted
-import com.rtu.itlab.Responses.BotEventReminder
+import com.rtu.itlab.Responses.*
 import com.rtu.itlab.Utils.getProp
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
@@ -29,35 +26,35 @@ fun Application.main() {
     }
 
     routing {
-        /*
-        post("/") {
 
-            val tmp: JsonObject? = Gson().
-                    fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+//        post("/") {
+//
+//            val tmp: JsonObject? = Gson().
+//                    fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+//
+//            val type: String? = tmp?.get("type")?.asString
+//
+//            val body: String? = tmp?.getAsJsonObject("object")?.get("text")?.asString
+//
+//            val user_id = tmp?.getAsJsonObject("object")?.get("from_id")?.asInt
+//
+//            val actor = GroupActor(properties.getProperty("group.id").toInt(), properties.getProperty("group.accessToken"))
+//
+//            if (type.equals("message_new")) {
+//                vk.messages()
+//                        .send(actor)
+//                        .userId(user_id)
+//                        .message("DmRomanov Server: Привет! $body")
+//                        .execute()
+//                call.respond("ok")
+//            } else {
+//                if (type.equals("confirmation")) call.respondText(properties.getProperty("server.response"))
+//                else {
+//                    call.respondText("ok")
+//                }
+//            }
+//        }
 
-            val type: String? = tmp?.get("type")?.asString
-
-            val body: String? = tmp?.getAsJsonObject("object")?.get("text")?.asString
-
-            val user_id = tmp?.getAsJsonObject("object")?.get("from_id")?.asInt
-
-            val actor = GroupActor(properties.getProperty("group.id").toInt(), properties.getProperty("group.accessToken"))
-
-            if (type.equals("message_new")) {
-                vk.messages()
-                        .send(actor)
-                        .userId(user_id)
-                        .message("DmRomanov Server: Привет! $body")
-                        .execute()
-                call.respond("ok")
-            } else {
-                if (type.equals("confirmation")) call.respondText(properties.getProperty("server.response"))
-                else {
-                    call.respondText("ok")
-                }
-            }
-        }
-*/
         get("/") { call.respondText { "It's OK, just Wrong" } }
 
         post("/"){
@@ -89,5 +86,13 @@ fun Application.main() {
             BotEventReminder(tmp).send()
             call.respond("ok")
         }
+
+        post("/bot/newevent"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            notifyAboutNewEvent(tmp)
+            call.respond("ok")
+        }
+
+
     }
 }
