@@ -1,5 +1,5 @@
 package com.rtu.itlab
-
+//Теперь чисто ветка develop, не будем объединять с master пока не решимся
 import io.ktor.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
