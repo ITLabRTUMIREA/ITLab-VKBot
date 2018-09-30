@@ -2,24 +2,24 @@ package com.rtu.itlab
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.rtu.itlab.Responses.BotEquipmentAdded
+import com.rtu.itlab.Responses.BotEventChange
+import com.rtu.itlab.Responses.BotEventDeleted
+import com.rtu.itlab.Responses.BotEventReminder
 import com.rtu.itlab.Utils.getProp
-import com.vk.api.sdk.client.VkApiClient
-import com.vk.api.sdk.client.actors.GroupActor
-import com.vk.api.sdk.httpclient.HttpTransportClient
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
 import io.ktor.request.receiveStream
-import io.ktor.request.receiveText
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
 
 fun Application.main() {
-
+/*
     val transportClient = HttpTransportClient.getInstance()
-    val vk = VkApiClient(transportClient)
+    val vk = VkApiClient(transportClient)*/
     val properties = getProp()
 
     install(ContentNegotiation) {
@@ -29,6 +29,7 @@ fun Application.main() {
     }
 
     routing {
+        /*
         post("/") {
 
             val tmp: JsonObject? = Gson().
@@ -55,9 +56,38 @@ fun Application.main() {
                     call.respondText("ok")
                 }
             }
+        }
+*/
+        get("/") { call.respondText { "It's OK, just Wrong" } }
 
+        post("/"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            if (tmp?.get("type")?.asString.equals("confirmation")) call.respondText { properties.getProperty("server.response") }
+            else call.respond("ok")
         }
 
-        get("/") { call.respondText { "It's OK, just Wrong" } }
+        post("/bot/equipment/added"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            BotEquipmentAdded(tmp).send()
+            call.respond("ok")
+        }
+
+        post("/bot/event/change"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            BotEventChange(tmp).send()
+            call.respond("ok")
+        }
+
+        post("/bot/event/deleted"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            BotEventDeleted(tmp).send()
+            call.respond("ok")
+        }
+
+        post("/bot/event/reminder"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            BotEventReminder(tmp).send()
+            call.respond("ok")
+        }
     }
 }
