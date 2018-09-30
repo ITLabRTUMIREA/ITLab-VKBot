@@ -2,8 +2,8 @@ package com.rtu.itlab
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.rtu.itlab.Responses.*
-import com.rtu.itlab.Utils.getProp
+import com.rtu.itlab.responses.*
+import com.rtu.itlab.utils.getProp
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
@@ -93,6 +93,29 @@ fun Application.main() {
             call.respond("ok")
         }
 
+        post("/bot/event/invite"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            notifyAboutEventInvite(tmp)
+            call.respond("ok")
+        }
+
+        post("/bot/event/confirm"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            notifyAboutEventConfirm(tmp)
+            call.respond("ok")
+        }
+
+        post("/bot/event/freeplace"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            notifyAboutEventFreePlace(tmp)
+            call.respond("ok")
+        }
+
+        post("/bot/event/deletefromevent"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            notifyAboutDeleteFromEvent(tmp)
+            call.respond("ok")
+        }
 
     }
 }
