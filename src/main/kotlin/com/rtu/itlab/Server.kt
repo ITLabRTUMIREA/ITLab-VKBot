@@ -9,6 +9,7 @@ import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
 import io.ktor.request.receiveStream
+import io.ktor.request.receiveText
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
@@ -60,7 +61,7 @@ fun Application.main() {
         get("/") { call.respondText { "It's OK, just Wrong" } }
 
         post("/person/add"){
-            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            val tmp: JsonObject? = Gson().fromJson(call.receiveText(), JsonObject::class.java)
             db.addPerson(tmp!!)
             call.respond("ok")
         }

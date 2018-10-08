@@ -1,5 +1,6 @@
 package com.rtu.itlab.database
 
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import io.vertx.core.Vertx
 import io.vertx.kotlin.redis.RedisOptions
@@ -40,8 +41,8 @@ class DB {
 
     private var config: RedisOptions? = null
     private var redis: RedisClient? = null
-    private val keyPattern = "[1-9a-z]{8}-[1-9a-z]{4}-" +
-            "[1-9a-z]{4}-[1-9a-z]{4}-[1-9a-z]{12}"
+    private val keyPattern = "[0-9a-z]*-[0-9a-z]*-" +
+            "[0-9a-z]*-[0-9a-z]*-[0-9a-z]*"
 
     constructor() {}
 
@@ -114,12 +115,12 @@ class DB {
      * }
      */
     fun addPerson(person: JsonObject) {
-        val personInfo = io.vertx.core.json.JsonObject(person.asString)
+        val personInfo = io.vertx.core.json.JsonObject(person.toString())
         val id = personInfo.getString("id")
         personInfo.remove("id")
         redis!!.hmset(id, personInfo) { r ->
             if (r.succeeded()) {
-                print("Person added!")
+                println("Person added!")
             }
         }
     }
@@ -127,18 +128,28 @@ class DB {
     fun updatePesonValue(personId: String, key: String, value: String) {
         redis!!.hset(personId, key, value) { r ->
             if (r.succeeded()) {
-                print("Person info is updated!")
+                println("Person info is updated!")
             }
         }
     }
 
     fun getAllPersons():JsonObject?{
-        var list = redis!!.keys(keyPattern){r ->
+        var arrayKeys: MutableList<Any?>
+        redis!!.keys(keyPattern){r ->
             if(r.succeeded()){
-                print("List of keys was getting")
+                arrayKeys = r.result().list
+                println("List of keys was getting")
             }
         }
-        print(list.toString())
+        //print(arrayKeys!!)
+        var result:JsonObject
+//        for(s: Any? in arrayKeys!!.listIterator()){
+//            redis!!.hgetall(s.toString()){r->
+//                if(r.succeeded()){
+//                    println(r.result().toString())
+//                }
+//            }
+//        }
         return null
     }
 
