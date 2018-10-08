@@ -2,6 +2,7 @@ package com.rtu.itlab
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.rtu.itlab.database.DB
 import com.rtu.itlab.responses.*
 import com.rtu.itlab.utils.getProp
 import io.ktor.application.*
@@ -18,6 +19,7 @@ fun Application.main() {
     val transportClient = HttpTransportClient.getInstance()
     val vk = VkApiClient(transportClient)*/
     val properties = getProp()
+    val db = DB("1230",null,null)
 
     install(ContentNegotiation) {
         gson {
@@ -56,6 +58,25 @@ fun Application.main() {
 //        }
 
         get("/") { call.respondText { "It's OK, just Wrong" } }
+
+        post("/person/add"){
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            db.addPerson(tmp!!)
+            call.respond("ok")
+        }
+
+        get("/persons/get"){
+            //val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            db.getAllPersons()
+            call.respond("ok")
+        }
+
+        post("person/update/value"){
+            //val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)
+            db.getAllPersons()
+            call.respond("ok")
+        }
+
 
         post("/"){
             val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)

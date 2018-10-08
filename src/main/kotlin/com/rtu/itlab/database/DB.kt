@@ -1,16 +1,10 @@
 package com.rtu.itlab.database
 
 import com.google.gson.JsonObject
-import com.rtu.itlab.main
-import io.ktor.application.Application
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
 import io.vertx.kotlin.redis.RedisOptions
 import io.vertx.redis.RedisClient
 import io.vertx.redis.RedisOptions
-import io.vertx.core.VertxOptions
 
 
 //import org.jetbrains.exposed.sql.Database
@@ -46,6 +40,8 @@ class DB {
 
     private var config: RedisOptions? = null
     private var redis: RedisClient? = null
+    private val keyPattern = "[1-9a-z]{8}-[1-9a-z]{4}-" +
+            "[1-9a-z]{4}-[1-9a-z]{4}-[1-9a-z]{12}"
 
     constructor() {}
 
@@ -98,32 +94,60 @@ class DB {
 
         redis = RedisClient.create(Vertx.vertx(), config)
 
-        redis!!.set("key", "value") { r ->
-            if (r.succeeded()) {
-                println("key stored")
-                redis!!.get("key") { s ->
-                    println("Retrieved value: ${s.result()}")
-                }
-            } else {
-                println("Connection or Operation Failed ${r.cause()}")
-            }
-        }
-
     }
 
-    fun addPerson(tableName: String, values: JsonObject) {
-        var value = io.vertx.core.json.JsonObject(values.asString)
-
-        redis!!.hmset(tableName, value) { r ->
+    /**
+     * Method for adding or updating person info if person with this id already exist
+     * vkNotice,emailNotice,phoneNotice - boolean values
+     * id,firstName,lastName,phoneNumber,email,vkId - string values
+     * example of JsonObject
+     * {
+    "id": "123123341",
+    "firstName": "Дмитрий",
+    "lastName": "Романов",
+    "phoneNumber": "+71111111111",
+    "email": "qwe@gmail.com",
+    "vkId": "vkId",
+    "vkNotice": "true",
+    "emailNotice": "true",
+    "phoneNotice": "true"
+     * }
+     */
+    fun addPerson(person: JsonObject) {
+        val personInfo = io.vertx.core.json.JsonObject(person.asString)
+        val id = personInfo.getString("id")
+        personInfo.remove("id")
+        redis!!.hmset(id, personInfo) { r ->
             if (r.succeeded()) {
-                print("Person added to table $tableName")
+                print("Person added!")
             }
         }
     }
+
+    fun updatePesonValue(personId: String, key: String, value: String) {
+        redis!!.hset(personId, key, value) { r ->
+            if (r.succeeded()) {
+                print("Person info is updated!")
+            }
+        }
+    }
+
+    fun getAllPersons():JsonObject?{
+        var list = redis!!.keys(keyPattern){r ->
+            if(r.succeeded()){
+                print("List of keys was getting")
+            }
+        }
+        print(list.toString())
+        return null
+    }
+
+
 }
 
 fun main(args: Array<String>) {
     val db = DB("1230", null, null)
+    //db.addPerson()
 //    val redisClientVerticle = RedisClientVerticle()
 //    redisClientVerticle.start()
 }
