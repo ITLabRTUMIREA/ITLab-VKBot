@@ -1,21 +1,14 @@
 package com.rtu.itlab.responses
 
 import com.google.gson.JsonObject
-import com.rtu.itlab.utils.getProp
-import com.vk.api.sdk.client.VkApiClient
 import com.vk.api.sdk.client.actors.GroupActor
-import com.vk.api.sdk.httpclient.HttpTransportClient
 
-class BotEquipmentAdded (tmp: JsonObject?){
-    private val transportClient = HttpTransportClient.getInstance()
-    private val vk = VkApiClient(transportClient)
-    private val properties = getProp()
-
+class EquipmentAdded (tmp: JsonObject?): ResponseHandler(){
     private val userId = tmp?.get("to")?.asInt
     private val equipment = tmp?.getAsJsonObject("equipment")?.get("title")?.asString
     private val actor = GroupActor(properties.getProperty("group.id").toInt(), properties.getProperty("group.accessToken"))
 
-    fun send(){
+    override fun send(){
         vk.messages()
                 .send(actor)
                 .userId(userId)
