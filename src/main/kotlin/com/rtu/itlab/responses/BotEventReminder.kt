@@ -1,7 +1,7 @@
-package com.rtu.itlab.Responses
+package com.rtu.itlab.responses
 
 import com.google.gson.JsonObject
-import com.rtu.itlab.Utils.getProp
+import com.rtu.itlab.utils.getProp
 import com.vk.api.sdk.client.VkApiClient
 import com.vk.api.sdk.client.actors.GroupActor
 import com.vk.api.sdk.httpclient.HttpTransportClient

@@ -1,4 +1,4 @@
-package com.rtu.itlab.Utils
+package com.rtu.itlab.utils
 
 import java.io.IOException
 import java.io.FileInputStream
