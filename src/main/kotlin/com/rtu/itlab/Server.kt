@@ -16,10 +16,11 @@ import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
+import java.util.concurrent.ConcurrentSkipListSet
 
 fun Application.main() {
     val db = DB("1230",null,null)
-    var users = mutableListOf<UserCard>()
+    var users = ConcurrentSkipListSet<UserCard>()
 
     install(ContentNegotiation) {
         gson {
