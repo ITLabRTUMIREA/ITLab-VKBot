@@ -1,41 +1,10 @@
 package com.rtu.itlab.database
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.redis.RedisOptions
 import io.vertx.redis.RedisClient
 import io.vertx.redis.RedisOptions
-
-
-//import org.jetbrains.exposed.sql.Database
-//import org.jetbrains.exposed.sql.SchemaUtils.create
-//import org.jetbrains.exposed.sql.Table
-//import org.jetbrains.exposed.sql.transactions.transaction
-//
-//object Users : Table() {
-//    val id = integer("id").autoIncrement().primaryKey()
-//    val serverId = varchar("serverId", 40)
-//    val firstName = varchar("firstName", 15)
-//    val lastName = varchar("lastName", 15)
-//    val email = varchar("email", 25).nullable()
-//    val phoneNumber = varchar("phoneNumber", 25).nullable()
-//    val vkId = (integer("vkId"))
-//}
-//
-//object Notice : Table() {
-//    val id = integer("id").autoIncrement().primaryKey()
-//    val vkNotice = bool("vkNotice")
-//    val phoneNotice = bool("phoneNotice")
-//}
-//
-//fun main(args: Array<String>) {
-//    Database.connect("jdbc:h2:mem:test", driver = "org.h2.Driver")
-//
-//    transaction {
-//        create(Users, Notice)
-//    }
-//}
 
 class DB {
 
@@ -43,6 +12,7 @@ class DB {
     private var redis: RedisClient? = null
     private val keyPattern = "[0-9a-z]*-[0-9a-z]*-" +
             "[0-9a-z]*-[0-9a-z]*-[0-9a-z]*"
+    private val KEY = "id"
 
     constructor() {}
 
@@ -59,38 +29,7 @@ class DB {
      * default port = 6379
      */
     fun createConnectionToDB(password: String?, ip: String?, port: Int?) {
-//        config = if (ip != null) {
-//
-//            if (port != null)
-//
-//                if (password != null)
-//                    RedisOptions(host = ip, port = port, auth = password)
-//                else
-//                    RedisOptions(host = ip, port = port)
-//            else
-//
-//                if (password != null)
-//                    RedisOptions(host = ip, auth = password)
-//                else
-//                    RedisOptions(host = ip)
-//
-//        } else {
-//
-//            if (port != null)
-//
-//                if (password != null)
-//                    RedisOptions(port = port, auth = password)
-//                else
-//                    RedisOptions(port = port)
-//
-//            else
-//
-//                if (password != null)
-//                    RedisOptions(auth = password)
-//                else
-//                    RedisOptions()
-//
-//        }
+
         config = RedisOptions(host = ip, port = port, auth = password)
 
         redis = RedisClient.create(Vertx.vertx(), config)
@@ -115,75 +54,77 @@ class DB {
      * }
      */
     fun addPerson(person: JsonObject) {
-        val personInfo = io.vertx.core.json.JsonObject(person.toString())
-        val id = personInfo.getString("id")
-        personInfo.remove("id")
-        redis!!.hmset(id, personInfo) { r ->
+        val id = person.getString(KEY)
+        person.remove(KEY)
+        redis!!.hmset(id, person) { r ->
             if (r.succeeded()) {
+                makeDump()
                 println("Person added!")
+            } else {
+                println("Error adding person, check connection to database!")
             }
         }
     }
 
-    fun updatePesonValue(personId: String, key: String, value: String) {
-        redis!!.hset(personId, key, value) { r ->
+    fun makeDump() {
+        redis!!.save { r ->
             if (r.succeeded()) {
-                println("Person info is updated!")
+                println("Dump was created/updated!")
             }
         }
     }
 
-    fun getAllPersons():JsonObject?{
-        var arrayKeys: MutableList<Any?>
-        redis!!.keys(keyPattern){r ->
-            if(r.succeeded()){
-                arrayKeys = r.result().list
-                println("List of keys was getting")
-            }
+
+    fun getUserInfoByKey(person: JsonObject):JsonObject {
+        var result = JsonObject()
+        var b = true
+//        var handleUserInfo = Handler<JsonObject> { info ->
+//            result = info
+//            b = false
+//            return@Handler
+//            //print("Result from handler $result")
+//        }
+
+        val id = person.getString(KEY)
+        redis!!.hgetall(id){ r ->
+            result = r.result()
+            b = false
+            //handleUserInfo.handle(r.result())
         }
-        //print(arrayKeys!!)
-        var result:JsonObject
-//        for(s: Any? in arrayKeys!!.listIterator()){
-//            redis!!.hgetall(s.toString()){r->
-//                if(r.succeeded()){
-//                    println(r.result().toString())
+
+        while(b){Thread.sleep(1000)}
+        return result
+    }
+
+//    fun getAllPersons(): io.vertx.core.json.JsonObject? {
+//        var personsHandler = Handler<String> {obj->
+//            println(obj)
+//        }
+//
+//        var keyHandler = Handler<JsonArray>{ r->
+//            val keys = r.toMutableSet()
+//            var resultPersonsArray = JsonArray()
+//            val gson = GsonBuilder().setPrettyPrinting().create()
+//            for(s: Any in keys){
+//                redis!!.hgetall(s.toString()){r->
+//                    if(r.succeeded()){
+//                        val user = gson.fromJson(r.result().toString(), JsonElement::class.java)
+//                        resultPersonsArray.add(user)
+//                    }else{
+//                        //TODO: ERROR
+//                    }
 //                }
 //            }
-//        }
-        return null
-    }
-
-
-}
-
-fun main(args: Array<String>) {
-    val db = DB("1230", null, null)
-    //db.addPerson()
-//    val redisClientVerticle = RedisClientVerticle()
-//    redisClientVerticle.start()
-}
-
-//class RedisClientVerticle : io.vertx.core.AbstractVerticle() {
-//    override fun start() {
-//        // If a config file is set, read the host and port.
-//        var host = "127.0.0.1"
-//        if (host == null) {
-//            host = "127.0.0.1"
+//            println("List of persons was getting!")
 //        }
 //
-//        // Create the redis client
-//        var client = RedisClient.create(Vertx.vertx(), RedisOptions(
-//                host = host, auth = "1230"))
-//
-//        client.set("key", "value", { r ->
+//        redis!!.keys(keyPattern) {r ->
 //            if (r.succeeded()) {
-//                println("key stored")
-//                client.get("key", { s ->
-//                    println("Retrieved value: ${s.result()}")
-//                })
-//            } else {
-//                println("Connection or Operation Failed ${r.cause()}")
+//                keyHandler.handle(r.result())
+//
 //            }
-//        })
+//        }
+//
+//        return null
 //    }
-//}
+}
