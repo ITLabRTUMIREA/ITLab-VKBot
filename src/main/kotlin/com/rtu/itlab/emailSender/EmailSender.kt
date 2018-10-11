@@ -1,5 +1,5 @@
 import com.sun.mail.smtp.SMTPTransport
-import java.io.*
+
 import java.util.*
 import javax.mail.Message
 import javax.mail.Session
@@ -9,22 +9,23 @@ import org.jsoup.Jsoup
 import java.io.File
 
 
-//Read by line from File without duplicates
-fun readFromFile(path: String): List<String> {
+/**
+ * Method for sending message to mail
+ * @param user user login(email)
+ * @param password user password from email
+ * @param messageSubject Topic of the letter
+ * @param messageContent Content of the letter (The letter itself)
+ * @param receivers List of email addresses to receive email
+ * @param from sender's address
+ * @param messageDelay Delay between sending messages
+ * @param port email service port
+ * @param host email host address
+ *
+ * @return List with lines of file
+ */
 
-    val inputStream: InputStream = File(path).inputStream()
-    val linesFromFile = mutableListOf<String>()
-
-    inputStream.bufferedReader().useLines { lines -> lines.forEach { linesFromFile.add(it) } }
-
-    //toSet() Delete duplicates
-    return linesFromFile.toSet().toList()
-}
-
-
-fun sendMail(user: String, password: String, messageSubject: String, messageContent: String, receivers: List<String>, from: String, messageDelay: Long = 100,
+fun sendMail(user: String, password: String, messageSubject: String, messageContent: String, receivers: Set<String>, from: String, messageDelay: Long = 1,
              port: String = "8080", host: String = "") {
-
     //system properties
     var properies: Properties = System.getProperties()
     //host
@@ -64,12 +65,14 @@ fun sendMail(user: String, password: String, messageSubject: String, messageCont
 
         t.close()
 
-        Thread.sleep(messageDelay)
-
     }
 }
 
-
+/**
+ * This method for reading html page
+ * @param path path to file
+ * @return html code of page
+ */
 fun getWebSiteCode(path: String): String {
     val input = File(path)
     val doc = Jsoup.parse(input, null)
