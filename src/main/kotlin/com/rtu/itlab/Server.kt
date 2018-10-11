@@ -64,20 +64,6 @@ fun Application.main() {
                 "EventReminder" -> {
                     EventReminder(tmp).send()
                 }
-                "VkVerification" -> {
-                    users.add(UserCard(GetUserId(tmp).userId))
-                    var x=false
-                    while (!x) {
-                        for (item in users) {
-                            if (item.userId == item.vkId) {
-                                call.respondText{item.token}
-                                users.remove(item)
-                                x = true
-                                break
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -86,12 +72,7 @@ fun Application.main() {
             when {
                 tmp.get("type").asString.equals("confirmation") -> call.respond(getProp().getProperty("server.response"))
                 tmp.get("type").asString.equals("message_new") -> {
-                    for (item in users) {
-                        if (item.userId==GetVkToken(tmp).vkId) {
-                            item.vkId = GetVkToken(tmp).vkId
-                            item.token = GetVkToken(tmp).token
-                        }
-                    }
+                    GetVkToken(tmp).send()
                     call.respond("ok")
                 }
                 else -> call.respond("ok")
