@@ -64,10 +64,11 @@ fun Application.main() {
                 "EventReminder" -> {
                     EventReminder(tmp).send()
                 }
+                "confirmation" -> call.respond(getProp().getProperty("server.response"))// VK synergy
             }
         }
 
-        post("/"){
+        post("/bot"){
             val tmp = call.receive<JsonObject>()
             when {
                 tmp.get("type").asString.equals("confirmation") -> call.respond(getProp().getProperty("server.response"))
