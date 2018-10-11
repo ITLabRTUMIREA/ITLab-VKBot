@@ -6,3 +6,4 @@ src/main/resources/config\.properties
 *.log
 
 target/
+\.idea/
