@@ -1,24 +1,47 @@
 package com.rtu.itlab.responses
 
 import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.gson.responseObject
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.rtu.itlab.utils.ServerResponseJson
 import com.rtu.itlab.utils.UserCard
 import com.vk.api.sdk.client.actors.GroupActor
 
 class GetVkToken(tmp: JsonObject?) : ResponseHandler(){
-    val vkId = tmp!!.getAsJsonObject("object").get("from_id").asInt
-    val token: String = tmp!!.getAsJsonObject("object").get("text").asString
+    private val vkId = tmp!!.getAsJsonObject("object").get("from_id").asInt
+    private val token: String = tmp!!.getAsJsonObject("object").get("text").asString
+    private val actor = GroupActor(properties.getProperty("group.id").toInt(), properties.getProperty("group.accessToken"))
 
     override fun send() {
         if (token.startsWith("L:")) {
-            Fuel.post("https://httpbin.org/post").body(Gson().toJson(UserCard(token, vkId))).header("Content-Type" to "application/json")
+            Fuel.post("https://174b86bd.ngrok.io/api/account/property/vk") //TODO
+                    .body(Gson().toJson(UserCard(token.substringAfter("L:"), vkId)))
+                    .header("Content-Type" to "application/json", "Authorization" to "LOLKEKCHEBUREK")
+                    .responseObject<ServerResponseJson> {_, _, result ->
+                        when {
+                            result.get().statusCode==1 -> vk.messages() //TODO Ебаные цифры
+                                    .send(actor)
+                                    .userId(vkId)
+                                    .message("Поздравляем, ваша учетня запись прикреплена")
+                                    .execute()
+                            result.get().statusCode==26 -> vk.messages() //TODO Ебаные цифры
+                                    .send(actor)
+                                    .userId(vkId)
+                                    .message("Проверьте правильность написания кода")
+                                    .execute()
+                            else -> vk.messages()
+                                    .send(actor)
+                                    .userId(vkId)
+                                    .message("Что-то пошло не так")
+                                    .execute()
+                        }
+                    }
         } else {
-            val actor = GroupActor(properties.getProperty("group.id").toInt(), properties.getProperty("group.accessToken"))
             vk.messages()
                     .send(actor)
                     .userId(vkId)
-                    .message("Если вы пытались прислать код для верификация, товы сделали это как-то не так\n Проверьте правильность написания кода")
+                    .message("Если вы пытались прислать код для верификация, то вы сделали это как-то не так\nЯ не веду бесед с незнакомцами\nПроверьте правильность написания кода")
                     .execute()
         }
     }
