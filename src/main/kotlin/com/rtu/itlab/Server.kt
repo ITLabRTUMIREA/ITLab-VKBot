@@ -2,7 +2,7 @@ package com.rtu.itlab
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.rtu.itlab.database.DB
+import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.*
 import com.rtu.itlab.utils.UserCard
 import com.rtu.itlab.utils.getProp
@@ -11,16 +11,15 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
 import io.ktor.request.receive
 import io.ktor.request.receiveStream
-import io.ktor.request.receiveText
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
-import java.util.concurrent.ConcurrentSkipListSet
 
 fun Application.main() {
-    val db = DB("1230",null,null)
-    var users = ConcurrentSkipListSet<UserCard>()
+
+    val db = DBClient("1230")
+    var users = mutableListOf<UserCard>()
 
     install(ContentNegotiation) {
         gson {
@@ -31,9 +30,9 @@ fun Application.main() {
     routing {
         get("/") { call.respondText { "It's OK, just Wrong" } }
 
-        post("/bot"){
+        post("/bot") {
             val tmp = call.receive<JsonObject>()//ПРОВЕРКА НЕОБХОДИМА   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            when (tmp.get("type").asString){
+            when (tmp.get("type").asString) {
                 "EquipmentAdded" -> {
                     EquipmentAdded(tmp).send()
                 }
@@ -74,6 +73,30 @@ fun Application.main() {
                 }
             }
         }
+
+
+        post("/person/add") {
+            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+            db!!.addPerson(tmp)
+            call.respond("OK")
+        }
+
+        post("/person/get") {
+            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+            call.respond(db.getUserInfoByKey(tmp))
+        }
+
+        get("/persons/get") {
+            call.respond(db.getAllPersons()!!)
+        }
+
+        post("/person/delete") {
+            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+            db.deletePerson(tmp)
+            call.respond("OK")
+        }
+
+
 //            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)  ПРИМЕР ТОГО, ЧТО ТОЧНО РАБОТАЕТ КАК НАДО
     }
 }
