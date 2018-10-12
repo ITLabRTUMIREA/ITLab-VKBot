@@ -64,19 +64,14 @@ fun Application.main() {
                 "EventReminder" -> {
                     EventReminder(tmp).send()
                 }
-                "confirmation" -> call.respond(getProp().getProperty("server.response"))// VK synergy
-            }
-        }
-
-        post("/bot"){
-            val tmp = call.receive<JsonObject>()
-            when {
-                tmp.get("type").asString.equals("confirmation") -> call.respond(getProp().getProperty("server.response"))
-                tmp.get("type").asString.equals("message_new") -> {
-                    GetVkToken(tmp).send()
-                    call.respond("ok")
+                "confirmation" -> {
+                    call.respond(getProp().getProperty("server.response"))
+                    // VK synergy
                 }
-                else -> call.respond("ok")
+                "message_new" -> {
+                    GetVkToken(tmp).send()
+                    call.respond("ok") // Code Handler
+                }
             }
         }
 //            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)  ПРИМЕР ТОГО, ЧТО ТОЧНО РАБОТАЕТ КАК НАДО
