@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.*
-import com.rtu.itlab.utils.UserCard
 import com.rtu.itlab.utils.getProp
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
@@ -19,7 +18,6 @@ import java.io.InputStreamReader
 fun Application.main() {
 
     val db = DBClient("1230")
-    var users = mutableListOf<UserCard>()
 
     install(ContentNegotiation) {
         gson {
@@ -31,8 +29,9 @@ fun Application.main() {
         get("/") { call.respondText { "It's OK, just Wrong" } }
 
         post("/bot") {
-            val tmp = call.receive<JsonObject>()//ПРОВЕРКА НЕОБХОДИМА   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            when (tmp.get("type").asString) {
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java) // ПРИМЕР ТОГО, ЧТО ТОЧНО РАБОТАЕТ КАК НАДО
+//            val tmp = call.receive<JsonObject>()//ПРОВЕРКА НЕОБХОДИМА   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            when (tmp!!.get("type").asString) {
                 "EquipmentAdded" -> {
                     EquipmentAdded(tmp).send()
                 }
@@ -71,6 +70,7 @@ fun Application.main() {
                     GetVkToken(tmp).send()
                     call.respond("ok") // Code Handler
                 }
+                else -> call.respondText { "It's Ok, just Wrong" }
             }
         }
 
