@@ -7,7 +7,7 @@ class EventInvite(tmp: JsonObject?):ResponseHandler() {
     private val userId = tmp?.get("to")?.asInt
     private val eventTitle: String? = tmp?.get("eventTitle")?.asString
     private val address: String? = tmp?.get("address")?.asString
-    private val actor = GroupActor(properties.getProperty("group.id").toInt(), properties.getProperty("group.accessToken"))
+    private val actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
 
     override fun send() {
         vk.messages()

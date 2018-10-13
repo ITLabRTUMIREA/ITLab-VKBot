@@ -7,7 +7,7 @@ class EventNew(tmp: JsonObject?): ResponseHandler() {
     private val userId = 260397691//tmp?.get("to")?.asInt //TODO Кому отправлять. Здесь должна быть масс рассылка из бд
     private val eventTitle: String? = tmp?.getAsJsonObject("data")?.get("title")?.asString
     private val address: String? = tmp?.getAsJsonObject("data")?.get("address")?.asString
-    private val actor = GroupActor(properties.getProperty("group.id").toInt(), properties.getProperty("group.accessToken"))
+    private val actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
 
     override fun send() {
         vk.messages()

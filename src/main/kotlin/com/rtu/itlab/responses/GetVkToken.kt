@@ -11,11 +11,11 @@ import com.vk.api.sdk.client.actors.GroupActor
 class GetVkToken(tmp: JsonObject?) : ResponseHandler(){
     private val vkId = tmp!!.getAsJsonObject("object").get("from_id").asInt
     private val token: String = tmp!!.getAsJsonObject("object").get("text").asString
-    private val actor = GroupActor(properties.getProperty("group.id").toInt(), properties.getProperty("group.accessToken"))
+    private val actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
 
     override fun send() {
         if (token.startsWith("L:")) {
-            Fuel.post("https://174b86bd.ngrok.io/api/account/property/vk") //TODO
+            Fuel.post(config.getString("apiserver.host") + "/api/account/property/vk")
                     .body(Gson().toJson(UserCard(token.substringAfter("L:"), vkId)))
                     .header("Content-Type" to "application/json", "Authorization" to "LOLKEKCHEBUREK")
                     .responseObject<ServerResponseJson> {_, _, result ->

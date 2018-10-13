@@ -7,3 +7,5 @@ src/main/resources/config\.properties
 
 target/
 \.idea/
+
+src/main/resources/application\.conf

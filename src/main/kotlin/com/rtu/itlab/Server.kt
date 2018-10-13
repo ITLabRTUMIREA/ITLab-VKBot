@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.*
-import com.rtu.itlab.utils.getProp
+import com.typesafe.config.ConfigFactory
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
@@ -17,6 +17,7 @@ import java.io.InputStreamReader
 
 fun Application.main() {
 
+    val config = ConfigFactory.load()
     val db = DBClient("1230")
 
     install(ContentNegotiation) {
@@ -63,7 +64,7 @@ fun Application.main() {
                     EventReminder(tmp).send()
                 }
                 "confirmation" -> {
-                    call.respond(getProp().getProperty("server.response"))
+                    call.respond(config.getString("server.response"))
                     // VK synergy
                 }
                 "message_new" -> {

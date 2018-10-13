@@ -16,6 +16,8 @@
         <kotlin.version>1.2.71</kotlin.version>
         <junit.version>4.12</junit.version>
         <ktor.version>0.9.5</ktor.version>
+        <main.class>com.rtu.itlab.MainKt</main.class>
+        <jarName>service</jarName>
     </properties>
 
     <dependencies>
@@ -86,7 +88,12 @@
             <groupId>com.github.kittinunf.fuel</groupId>
             <artifactId>fuel-gson</artifactId>
             <version>1.12.1</version>
-    </dependency>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+            <version>1.2.1</version>
+        </dependency>
     </dependencies>
 
 
@@ -95,6 +102,31 @@
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
 
         <plugins>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${main.class}</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
@@ -141,5 +173,4 @@
             <url>http://jcenter.bintray.com</url>
         </repository>
     </repositories>
-
 </project>
