@@ -17,7 +17,7 @@ class GetVkToken(tmp: JsonObject?) : ResponseHandler(){
         if (token.startsWith("L:")) {
             Fuel.post(config.getString("apiserver.host") + "/api/account/property/vk")
                     .body(Gson().toJson(UserCard(token.substringAfter("L:"), vkId)))
-                    .header("Content-Type" to "application/json", "Authorization" to "LOLKEKCHEBUREK")
+                    .header("Content-Type" to "application/json", "Authorization" to config.getString("accessToken"))
                     .responseObject<ServerResponseJson> {_, _, result ->
                         when {
                             result.get().statusCode==1 -> vk.messages() //TODO Ебаные цифры
