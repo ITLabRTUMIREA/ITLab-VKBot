@@ -61,9 +61,9 @@ fun sendMail(userMail: String, password: String, messageSubject: String = "", me
     transport.close()
 }
 
-fun sendMail(user: User, mailMessage: MailMessage, host: Host, receivers: Set<String>) {
-    sendMail(user.email, user.password, mailMessage.subject, mailMessage.content, receivers,
-            user.from, host = host.port, port = host.port)
+fun sendMail(userMail: UserMail, mailMessage: MailMessage, hostMail: HostMail, receivers: Set<String>) {
+    sendMail(userMail.email, userMail.password, mailMessage.subject, mailMessage.content, receivers,
+            userMail.from, host = hostMail.port, port = hostMail.port)
 }
 
 
