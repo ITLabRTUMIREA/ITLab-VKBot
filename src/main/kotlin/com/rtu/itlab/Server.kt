@@ -8,6 +8,7 @@ import com.typesafe.config.ConfigFactory
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
+import io.ktor.http.ContentType
 import io.ktor.request.receive
 import io.ktor.request.receiveStream
 import io.ktor.response.respond
@@ -30,7 +31,7 @@ fun Application.main() {
         get("/") { call.respondText { "It's OK, just Wrong" } }
 
         post("/bot") {
-            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java) // ПРИМЕР ТОГО, ЧТО ТОЧНО РАБОТАЕТ КАК НАДО
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java) // ПРИМЕР ТОГО, ЧТО ТОЧНО РАБОТАЕТ КАК НАДО
 //            val tmp = call.receive<JsonObject>()//ПРОВЕРКА НЕОБХОДИМА   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             when (tmp!!.get("type").asString) {
                 "EquipmentAdded" -> {
@@ -97,7 +98,32 @@ fun Application.main() {
             call.respond("OK")
         }
 
+        delete("/persons/delete") {
+            db.deleteAllPersons()
+            call.respond("OK")
+        }
 
-//            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(),"UTF-8"), JsonObject::class.java)  ПРИМЕР ТОГО, ЧТО ТОЧНО РАБОТАЕТ КАК НАДО
+        post("/person/update") {
+            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+            call.respond(db.updatePersonInfo(tmp))
+        }
+
+        get("/persons/mailnotice") {
+            call.respond(db.getUsersMailsForEmailMailing())
+        }
+
+        get("/persons/phonenotice") {
+            call.respond(db.getUsersPhonesForPhoneMailing())
+        }
+
+        get("/persons/vknotice") {
+            call.respond(db.getUsersVkIdForVkMailing())
+        }
+
+        post("/persons/add") {
+            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+            db.addPersons(tmp)
+            call.respond("OK")
+        }
     }
 }
