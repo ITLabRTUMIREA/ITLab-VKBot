@@ -1,1 +1,3 @@
-class User(var userName: String, var password: String)
+package com.rtu.itlab.emailSender
+
+data class User(val email: String, val password: String, val from: String = email)

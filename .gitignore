@@ -1,7 +1,5 @@
 .idea/workspace.xml
 
-src/main/resources/config\.properties
-
 # Log file
 *.log
 
