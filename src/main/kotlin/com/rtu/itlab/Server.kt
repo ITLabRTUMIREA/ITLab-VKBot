@@ -77,50 +77,50 @@ fun Application.main() {
         }
 
 
-        post("/person/add") {
+        post("/bot/person/add") {
             val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
             db!!.addPerson(tmp)
             call.respond("OK")
         }
 
-        post("/person/get") {
+        post("/bot/person/get") {
             val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
             call.respond(db.getUserInfoByKey(tmp))
         }
 
-        get("/persons/get") {
+        get("/bot/persons/get") {
             call.respond(db.getAllPersons()!!)
         }
 
-        post("/person/delete") {
+        post("/bot/person/delete") {
             val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
             db.deletePerson(tmp)
             call.respond("OK")
         }
 
-        delete("/persons/delete") {
+        delete("/bot/persons/delete") {
             db.deleteAllPersons()
             call.respond("OK")
         }
 
-        post("/person/update") {
+        post("/bot/person/update") {
             val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
             call.respond(db.updatePersonInfo(tmp))
         }
 
-        get("/persons/mailnotice") {
+        get("/bot/persons/mailnotice") {
             call.respond(db.getUsersMailsForEmailMailing())
         }
 
-        get("/persons/phonenotice") {
+        get("/bot/persons/phonenotice") {
             call.respond(db.getUsersPhonesForPhoneMailing())
         }
 
-        get("/persons/vknotice") {
+        get("/bot/persons/vknotice") {
             call.respond(db.getUsersVkIdForVkMailing())
         }
 
-        post("/persons/add") {
+        post("/bot/persons/add") {
             val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
             db.addPersons(tmp)
             call.respond("OK")
