@@ -201,14 +201,14 @@ class DBClient {
      * Getting set of users vkIds which will be sent an vk alert
      * @return set of VkIds
      */
-    fun getUsersVkIdForVkMailing(): Set<String> {
-        val result = mutableSetOf<String>()
+    fun getUsersVkIdForVkMailing(): Set<Int> {
+        val result = mutableSetOf<Int>()
         val keys = syncCommands!!.keys(keyPattern)
         for (key in keys) {
-            var vkId = syncCommands!!.hget(key, "vkId")
+            val vkId = syncCommands!!.hget(key, "vkId")
             if (syncCommands!!.hget(key, "vkNotice").toBoolean() &&
                     (!vkId.equals("")) && (vkId != null) && (!vkId.equals("null")))
-                result.add(vkId)
+                result.add(vkId.toInt())
         }
         return result
     }
