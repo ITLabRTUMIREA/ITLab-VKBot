@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.*
+import com.rtu.itlab.responses.event.*
 import com.typesafe.config.ConfigFactory
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
@@ -48,13 +49,13 @@ fun Application.main() {
                     EventExcluded(tmp).send()
                 }
                 "EventFreePlace" -> {
-                    EventFreePlace(tmp).send()
+                    EventFreePlace(tmp,db).send()
                 }
                 "EventInvite" -> {
                     EventInvite(tmp).send()
                 }
                 "EventNew" -> {
-                    EventNew(tmp,db).send()
+                    EventNew(tmp, db).send()
                 }
                 "EventRejected" -> {
                     EventRejected(tmp).send()
@@ -74,54 +75,57 @@ fun Application.main() {
             }
         }
 
+        post("/bot/db") {
 
-        post("/bot/person/add") {
-            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
-            db!!.addPerson(tmp)
-            call.respond("OK")
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+
+            when (tmp!!.get("type").asString) {
+
+                "addPerson" -> {
+                    db!!.addPerson(tmp.getAsJsonObject("data"))
+                    call.respond("OK")
+                }
+
+                "getPerson" -> {
+                    call.respond(db.getUserInfoByKey(tmp.getAsJsonObject("data")))
+                }
+
+                "deletePerson" -> {
+                    db.deletePerson(tmp.getAsJsonObject("data"))
+                    call.respond("OK")
+                }
+
+                "personUpdate" -> {
+                    call.respond(db.updatePersonInfo(tmp.getAsJsonObject("data")))
+                }
+
+                "addPersons" -> {
+                    db.addPersons(tmp.getAsJsonObject("data"))
+                    call.respond("OK")
+                }
+            }
         }
 
-        post("/bot/person/get") {
-            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
-            call.respond(db.getUserInfoByKey(tmp))
-        }
-
-        get("/bot/persons/get") {
+        get("/bot/db/persons/get") {
             call.respond(db.getAllPersons()!!)
         }
 
-        post("/bot/person/delete") {
-            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
-            db.deletePerson(tmp)
-            call.respond("OK")
+        get("/bot/db/persons/mailnotice") {
+            call.respond(db.getUsersMailsForEmailMailing())
         }
 
-        delete("/bot/persons/delete") {
+        get("/bot/db/persons/phonenotice") {
+            call.respond(db.getUsersPhonesForPhoneMailing())
+        }
+
+        get("/bot/db/persons/vknotice") {
+            call.respond(db.getUsersVkIdForVkMailing())
+        }
+
+        delete("/bot/db/persons/delete") {
             db.deleteAllPersons()
             call.respond("OK")
         }
 
-        post("/bot/person/update") {
-            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
-            call.respond(db.updatePersonInfo(tmp))
-        }
-
-        get("/bot/persons/mailnotice") {
-            call.respond(db.getUsersMailsForEmailMailing())
-        }
-
-        get("/bot/persons/phonenotice") {
-            call.respond(db.getUsersPhonesForPhoneMailing())
-        }
-
-        get("/bot/persons/vknotice") {
-            call.respond(db.getUsersVkIdForVkMailing())
-        }
-
-        post("/bot/persons/add") {
-            val tmp: JsonObject = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
-            db.addPersons(tmp)
-            call.respond("OK")
-        }
     }
 }
