@@ -8,8 +8,6 @@ import com.typesafe.config.ConfigFactory
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
-import io.ktor.http.ContentType
-import io.ktor.request.receive
 import io.ktor.request.receiveStream
 import io.ktor.response.respond
 import io.ktor.response.respondText
@@ -56,7 +54,7 @@ fun Application.main() {
                     EventInvite(tmp).send()
                 }
                 "EventNew" -> {
-                    EventNew(tmp).send()
+                    EventNew(tmp,db).send()
                 }
                 "EventRejected" -> {
                     EventRejected(tmp).send()
