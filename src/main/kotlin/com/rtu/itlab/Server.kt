@@ -42,6 +42,9 @@ fun Application.main() {
                 "EventConfirm" -> {
                     EventConfirm(tmp).send()
                 }
+                "EventDenied" -> {
+                    EventDenied(tmp).send()
+                }
                 "EventDeleted" -> {
                     EventDeleted(tmp).send()
                 }
@@ -56,9 +59,6 @@ fun Application.main() {
                 }
                 "EventNew" -> {
                     EventNew(tmp, db).send()
-                }
-                "EventRejected" -> {
-                    EventRejected(tmp).send()
                 }
                 "EventReminder" -> {
                     EventReminder(tmp).send()

@@ -1,19 +1,36 @@
-package com.rtu.itlab.responses
+package com.rtu.itlab.responses.event
 
 import com.google.gson.JsonObject
-import com.vk.api.sdk.client.actors.GroupActor
+import com.rtu.itlab.database.DBClient
 
-class EventChange (tmp: JsonObject?): ResponseHandler(){
-    private val userId = tmp?.get("to")?.asInt
-    private val eventTitle: String? = tmp?.get("eventTitle")?.asString
-    private val address: String? = tmp?.get("address")?.asString
-    private val actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
-
-    override fun send(){
+/**
+ * The class for notifying the user about changes in event
+ * @param tmp - Json info about event
+ * @param db - Database with persons info
+ */
+class EventChange(tmp: JsonObject?, db: DBClient? = null) : EventInfo(tmp, db) {
+    //TODO: Refine what happens when an event changes
+    override fun send() {
         vk.messages()
-                .send(actor)
-                .userId(userId)
-                .message("Событие, на которое вы подписаны, было ИЗМЕНЕНО\n$eventTitle\nАдрес: $address")
+                .send(actor, userIds)
+                .message("Событие «${eventTitle}» было изменено!" +
+                        "\nНеобходимое количество участников: $participantsCount" +
+                        "\nНачало: $beginDate $beginTime" +
+                        "\nОкончание: $endDate $endTime" +
+                        "\nАдрес проведения мероприятия: $address" +
+                        "\nСсылка на событие: $url")
+                .execute()
+    }
+
+    fun send(userId: Int) {
+        vk.messages()
+                .send(actor, userId)
+                .message("Событие «${eventTitle}» было изменено!" +
+                        "\nНеобходимое количество участников: $participantsCount" +
+                        "\nНачало: $beginDate $beginTime" +
+                        "\nОкончание: $endDate $endTime" +
+                        "\nАдрес проведения мероприятия: $address" +
+                        "\nСсылка на событие: $url")
                 .execute()
     }
 }

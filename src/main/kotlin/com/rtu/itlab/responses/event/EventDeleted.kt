@@ -1,19 +1,26 @@
-package com.rtu.itlab.responses
+package com.rtu.itlab.responses.event
 
 import com.google.gson.JsonObject
+import com.rtu.itlab.database.DBClient
+import com.rtu.itlab.responses.ResponseHandler
 import com.vk.api.sdk.client.actors.GroupActor
 
-class EventDeleted (tmp: JsonObject?): ResponseHandler(){
-    private val userId = tmp?.get("to")?.asInt
-    private val eventTitle: String? = tmp?.get("eventTitle")?.asString
-    private val address: String? = tmp?.get("address")?.asString
-    private val actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
+/**
+ * Sending a message to the user about the cancellation of the event
+ * @param tmp - Json info about event
+ * @param db - Database with persons info
+ */
+class EventDeleted(tmp: JsonObject?, db: DBClient? = null) : EventInfo(tmp, db) {
 
-    override fun send(){
+    override fun send() {
         vk.messages()
-                .send(actor)
-                .userId(userId)
-                .message("Событие, на которое вы подписаны, было ОТМЕНЕНО\n$eventTitle\nАдрес: $address\nПриносим свои извинения")
+                .send(actor, userIds)
+                .message("Событие «${eventTitle}» было удалено(отменено)!" +
+                        "\nНеобходимое количество участников: $participantsCount" +
+                        "\nНачало: $beginDate $beginTime" +
+                        "\nОкончание: $endDate $endTime" +
+                        "\nАдрес проведения мероприятия: $address" +
+                        "\nСсылка на событие: $url")
                 .execute()
     }
 }
