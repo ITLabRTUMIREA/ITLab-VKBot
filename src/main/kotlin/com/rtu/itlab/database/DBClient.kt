@@ -10,10 +10,7 @@ import com.rtu.itlab.utils.mapAnyToMapString
 import com.google.gson.JsonObject
 
 
-
-
 class DBClient {
-
     private val keyPattern = "[0-9a-z]*-[0-9a-z]*-" +
             "[0-9a-z]*-[0-9a-z]*-[0-9a-z]*"
 
@@ -235,7 +232,7 @@ class DBClient {
      */
     fun addPersons(persons: JsonObject) {
         val personsArray = persons.get("data").asJsonArray
-        for(person in personsArray){
+        for (person in personsArray) {
             addPerson(person.asJsonObject)
         }
     }
