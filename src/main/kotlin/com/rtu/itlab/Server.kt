@@ -52,7 +52,7 @@ fun Application.main() {
                     EventExcluded(tmp).send()
                 }
                 "EventFreePlace" -> {
-                    EventFreePlace(tmp,db).send()
+                    EventFreePlace(tmp, db).send()
                 }
                 "EventInvite" -> {
                     EventInvite(tmp).send()
@@ -82,7 +82,7 @@ fun Application.main() {
             when (tmp!!.get("type").asString) {
 
                 "addPerson" -> {
-                    db!!.addPerson(tmp.getAsJsonObject("data"))
+                    db.addPerson(tmp.getAsJsonObject("data"))
                     call.respond("OK")
                 }
 

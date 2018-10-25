@@ -14,24 +14,26 @@ class EventDenied(tmp: JsonObject?, db: DBClient? = null) : EventInfo(tmp, db) {
     override fun send() {
         vk.messages()
                 .send(actor, userIds)
-                .message("Ваше участие в собитии «${eventTitle}» было отклонено!" +
+                .message("Ваше участие в событии «${eventTitle}» было отклонено!" +
                         "\nНеобходимое количество участников: $participantsCount" +
                         "\nНачало: $beginDate $beginTime" +
                         "\nОкончание: $endDate $endTime" +
                         "\nАдрес проведения мероприятия: $address" +
                         "\nСсылка на событие: $url")
+                .stickerId(9012)
                 .execute()
     }
 
     fun send(userId: Int) {
         vk.messages()
                 .send(actor, userId)
-                .message("Ваше участие в собитии «${eventTitle}» было отклонено!" +
+                .message("Ваше участие в событии «${eventTitle}» было отклонено!" +
                         "\nНеобходимое количество участников: $participantsCount" +
                         "\nНачало: $beginDate $beginTime" +
                         "\nОкончание: $endDate $endTime" +
                         "\nАдрес проведения мероприятия: $address" +
                         "\nСсылка на событие: $url")
+                .stickerId(5939)
                 .execute()
     }
 }
