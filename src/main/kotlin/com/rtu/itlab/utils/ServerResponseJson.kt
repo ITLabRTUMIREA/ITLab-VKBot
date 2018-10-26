@@ -1,3 +1,5 @@
 package com.rtu.itlab.utils
 
-data class ServerResponseJson(val type: String, val statusCode: Int)
+import com.rtu.itlab.database.DBUser
+
+data class ServerResponseJson(val data: DBUser, val statusCode: Int)

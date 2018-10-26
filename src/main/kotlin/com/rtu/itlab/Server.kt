@@ -5,6 +5,7 @@ import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.*
 import com.rtu.itlab.responses.event.*
+import com.rtu.itlab.responses.event.models.EventView
 import com.typesafe.config.ConfigFactory
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
@@ -18,11 +19,12 @@ import java.io.InputStreamReader
 fun Application.main() {
 
     val config = ConfigFactory.load()
-    val db = DBClient("1230")
+    val db = DBClient(config.getString("database.password"),config.getString("database.url"),config.getInt("database.port"))
 
     install(ContentNegotiation) {
         gson {
             setPrettyPrinting()
+            setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
         }
     }
 
@@ -37,39 +39,39 @@ fun Application.main() {
                     EquipmentAdded(tmp).send()
                 }
                 "EventChange" -> {
-                    EventChange(tmp).send()
+                    EventChange(Gson().fromJson(tmp,EventView::class.java), db).send()
                 }
                 "EventConfirm" -> {
-                    EventConfirm(tmp).send()
+                    EventConfirm(Gson().fromJson(tmp,EventView::class.java), db).send()
                 }
                 "EventDenied" -> {
-                    EventDenied(tmp).send()
+                    EventDenied(Gson().fromJson(tmp,EventView::class.java), db).send()
                 }
                 "EventDeleted" -> {
-                    EventDeleted(tmp).send()
+                    EventDeleted(Gson().fromJson(tmp,EventView::class.java), db).send()
                 }
                 "EventExcluded" -> {
-                    EventExcluded(tmp).send()
+                    EventExcluded(Gson().fromJson(tmp,EventView::class.java), db).send()
                 }
                 "EventFreePlace" -> {
-                    EventFreePlace(tmp, db).send()
+                    //EventFreePlace(tmp, db).send()
                 }
                 "EventInvite" -> {
-                    EventInvite(tmp).send()
+                    EventInvite(Gson().fromJson(tmp,EventView::class.java), db).send()
                 }
                 "EventNew" -> {
-                    EventNew(tmp, db).send()
+                    EventNew(Gson().fromJson(tmp.get("data"),EventView::class.java), db).send()
                 }
                 "EventReminder" -> {
-                    EventReminder(tmp).send()
+                    EventReminder(Gson().fromJson(tmp,EventView::class.java), db).send()
                 }
                 "confirmation" -> {
                     call.respond(config.getString("server.response"))
                     // VK synergy
                 }
                 "message_new" -> {
-                    GetVkToken(tmp).send()
-                    call.respond("ok") // Code Handler
+                    GetVkToken(tmp,db).send()
+                    call.respond("OK") // Code Handler
                 }
                 else -> call.respondText { "It's Ok, just Wrong" }
             }
@@ -100,7 +102,7 @@ fun Application.main() {
                 }
 
                 "addPersons" -> {
-                    db.addPersons(tmp.getAsJsonObject("data"))
+                    db.addPersons(tmp.getAsJsonArray("data"))
                     call.respond("OK")
                 }
             }
