@@ -3,6 +3,7 @@ package com.rtu.itlab.responses.event
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.ResponseHandler
+import com.rtu.itlab.responses.event.models.EventView
 import com.vk.api.sdk.client.actors.GroupActor
 
 /**
@@ -10,17 +11,12 @@ import com.vk.api.sdk.client.actors.GroupActor
  * @param tmp - Json info about event
  * @param db - Database with persons info
  */
-class EventDeleted(tmp: JsonObject?, db: DBClient? = null) : EventInfo(tmp, db) {
+class EventDeleted(val eventView: EventView, db: DBClient) : ResponseHandler(db){
 
     override fun send() {
         vk.messages()
                 .send(actor, userIds)
-                .message("Событие «${eventTitle}» было удалено(отменено)!" +
-                        "\nНеобходимое количество участников: $participantsCount" +
-                        "\nНачало: $beginDate $beginTime" +
-                        "\nОкончание: $endDate $endTime" +
-                        "\nАдрес проведения мероприятия: $address" +
-                        "\nСсылка на событие: $url")
+                .message("Событие «${eventView.title}» было удалено(отменено)!")
                 .execute()
     }
 }

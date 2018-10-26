@@ -2,25 +2,30 @@ package com.rtu.itlab.responses.event
 
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
+import com.rtu.itlab.responses.ResponseHandler
+import com.rtu.itlab.responses.event.models.EventView
+import com.rtu.itlab.responses.event.models.beginTime
+import com.rtu.itlab.responses.event.models.endTime
+import com.rtu.itlab.responses.event.models.targetParticipantsCount
 
 /**
  * Class of sending a message to the user who was invited to the event.
  * @param tmp - Json info about event
  * @param db - Database with persons info
  */
-class EventInvite(tmp: JsonObject?, db: DBClient? = null) : EventInfo(tmp, db) {
+class EventInvite(val eventView: EventView, db: DBClient) : ResponseHandler(db) {
 
     //TODO: Clarify how the invitee id will be obtained
 
     override fun send() {
         vk.messages()
                 .send(actor, userIds)
-                .message("Вы были приглашены на событие\n«${eventTitle}»" +
-                        "\nНеобходимое количество участников: $participantsCount" +
-                        "\nНачало: $beginDate $beginTime" +
-                        "\nОкончание: $endDate $endTime" +
-                        "\nАдрес проведения мероприятия: $address" +
-                        "\nСсылка на событие: $url" +
+                .message("Вы были приглашены на событие\n«${eventView.title}»" +
+                        "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
+                        "\nНачало: ${eventView.beginTime()}" +
+                        "\nОкончание: ${eventView.endTime()}" +
+                        "\nАдрес проведения мероприятия: ${eventView.address}" +
+                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}" +
                         "\nСвое участие можете подтвердить в личном кабинете по ссылке: https://itlab.azurewebsites.net/notifications")
                 .execute()
     }
@@ -28,12 +33,12 @@ class EventInvite(tmp: JsonObject?, db: DBClient? = null) : EventInfo(tmp, db) {
     fun send(userId: Int) {
         vk.messages()
                 .send(actor, userId)
-                .message("Вы были приглашены на событие\n«${eventTitle}»" +
-                        "\nНеобходимое количество участников: $participantsCount" +
-                        "\nНачало: $beginDate $beginTime" +
-                        "\nОкончание: $endDate $endTime" +
-                        "\nАдрес проведения мероприятия: $address" +
-                        "\nСсылка на событие: $url" +
+                .message("Вы были приглашены на событие\n«${eventView.title}»" +
+                        "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
+                        "\nНачало: ${eventView.beginTime()}" +
+                        "\nОкончание: ${eventView.endTime()}" +
+                        "\nАдрес проведения мероприятия: ${eventView.address}" +
+                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}" +
                         "\nСвое участие можете подтвердить в личном кабинете по ссылке: https://itlab.azurewebsites.net/notifications")
                 .execute()
     }

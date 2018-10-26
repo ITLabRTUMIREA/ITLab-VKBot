@@ -89,6 +89,22 @@ class DBClient {
         makeDump()
     }
 
+    fun addPerson(person: DBUser) {
+//        val id = person.get(KEY).asString
+//        person.remove(KEY)
+//        val dbUser = Gson().fromJson(person.toString(), DBUser::class.java)
+//        dbUser.id = id
+
+        person.vkNotice = true
+        person.emailNotice = true
+        person.phoneNotice = true
+
+        val map = ObjectMapper().convertValue(person, HashMap<String, String>().javaClass)
+        syncCommands!!.hmset(person.id, mapAnyToMapString(map))
+        println("Person added!")
+        makeDump()
+    }
+
     /**
      * Making dump file
      */
@@ -230,9 +246,9 @@ class DBClient {
      * Adding array of persons to database
      * @param persons contains {"data":[....]}
      */
-    fun addPersons(persons: JsonObject) {
-        val personsArray = persons.get("data").asJsonArray
-        for (person in personsArray) {
+    fun addPersons(persons: JsonArray) {
+        //val personsArray = persons.get("data").asJsonArray
+        for (person in persons) {
             addPerson(person.asJsonObject)
         }
     }
