@@ -6,9 +6,9 @@ package com.rtu.itlab.utils
  * @return Map<String, String>
  */
 fun mapAnyToMapString(inputs: Map<String, Any>): Map<String, String> {
-    var result = hashMapOf<String, String>()
+    val result = hashMapOf<String, String>()
     for (input in inputs) {
-        result.put(input.key, input.value?.toString())
+        result.plus(Pair(input.key, input.value.toString()))
     }
     return result
 }

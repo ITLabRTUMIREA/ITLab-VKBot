@@ -90,10 +90,6 @@ class DBClient {
     }
 
     fun addPerson(person: DBUser) {
-//        val id = person.get(KEY).asString
-//        person.remove(KEY)
-//        val dbUser = Gson().fromJson(person.toString(), DBUser::class.java)
-//        dbUser.id = id
 
         person.vkNotice = true
         person.emailNotice = true
