@@ -16,7 +16,7 @@ import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
 
-fun Application.main() {
+fun Application.main(){
 
     val config = ConfigFactory.load()
     val db = DBClient(config.getString("database.password"),config.getString("database.url"),config.getInt("database.port"))
@@ -29,11 +29,11 @@ fun Application.main() {
     }
 
     routing {
-        get("/") { call.respondText { "It's OK, just Wrong" } }
+        get("/") { call.respondText { "It's OK" } }
 
         post("/bot") {
-            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java) // ПРИМЕР ТОГО, ЧТО ТОЧНО РАБОТАЕТ КАК НАДО
-//            val tmp = call.receive<JsonObject>()//ПРОВЕРКА НЕОБХОДИМА   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+
             when (tmp!!.get("type").asString) {
                 "EquipmentAdded" -> {
                     EquipmentAdded(tmp).send()
