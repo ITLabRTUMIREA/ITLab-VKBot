@@ -11,6 +11,7 @@ import com.rtu.itlab.responses.event.models.targetParticipantsCount
  * Class of sending a message to VC when a new event was created
  * @param eventView
  * @param db - Database with persons info
+
  */
 class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler(db) {
 

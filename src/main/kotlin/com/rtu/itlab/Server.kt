@@ -19,7 +19,7 @@ import java.io.InputStreamReader
 fun Application.main(){
 
     val config = ConfigFactory.load()
-    val db = DBClient(config.getString("database.password"),config.getString("database.url"),config.getInt("database.port"))
+    val db = DBClient(config.getString("database.password"), config.getString("database.url"), config.getInt("database.port"))
 
     install(ContentNegotiation) {
         gson {

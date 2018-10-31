@@ -4,15 +4,20 @@ import io.ktor.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 
-private const val portArg = "-port"
-private var port = 8080
+//Server port
+private const val SPORTARG = "-sp"
+private var sPort = 8080
+
+//Database port
+//private const val DPROTARG = "-dp"
+//private var dPort = 6379
 
 fun main(args: Array<String>) {
 
-    val portObtainedInArgs  = args.isNotEmpty() && args[0].startsWith(portArg)
+    val portObtainedInArgs  = args.isNotEmpty() && args[0].startsWith(SPORTARG)
 
     if(portObtainedInArgs)
-        port = args[0].split("=").last().trim().toInt()
+        sPort = args[0].split("=").last().trim().toInt()
 
-    embeddedServer(Netty, port, module = Application::main).start(wait = true)
+    embeddedServer(Netty, sPort, module = Application::main).start(wait = true)
 }
