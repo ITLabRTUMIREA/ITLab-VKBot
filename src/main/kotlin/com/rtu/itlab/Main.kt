@@ -8,10 +8,6 @@ import io.ktor.server.netty.Netty
 private const val SPORTARG = "-sp"
 private var sPort = 8080
 
-//Database port
-//private const val DPROTARG = "-dp"
-//private var dPort = 6379
-
 fun main(args: Array<String>) {
 
     val portObtainedInArgs  = args.isNotEmpty() && args[0].startsWith(SPORTARG)

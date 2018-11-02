@@ -3,8 +3,10 @@ package com.rtu.itlab
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
+import com.rtu.itlab.database.UserId
 import com.rtu.itlab.responses.*
 import com.rtu.itlab.responses.event.*
+import com.rtu.itlab.responses.event.models.EventInviteView
 import com.rtu.itlab.responses.event.models.EventView
 import com.typesafe.config.ConfigFactory
 import io.ktor.application.*
@@ -35,6 +37,13 @@ fun Application.main(){
             val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
 
             when (tmp!!.get("type").asString) {
+                "EventNew" -> {
+                    EventNew(Gson().fromJson(tmp.get("data"),EventView::class.java), db).send()
+                }
+                "EventInvite" -> {
+                    EventInvite(Gson().fromJson(tmp,EventInviteView::class.java), db).send()
+                }
+
                 "EquipmentAdded" -> {
                     EquipmentAdded(tmp).send()
                 }
@@ -56,12 +65,8 @@ fun Application.main(){
                 "EventFreePlace" -> {
                     //EventFreePlace(tmp, db).send()
                 }
-                "EventInvite" -> {
-                    EventInvite(Gson().fromJson(tmp,EventView::class.java), db).send()
-                }
-                "EventNew" -> {
-                    EventNew(Gson().fromJson(tmp.get("data"),EventView::class.java), db).send()
-                }
+
+
                 "EventReminder" -> {
                     EventReminder(Gson().fromJson(tmp,EventView::class.java), db).send()
                 }
@@ -86,10 +91,6 @@ fun Application.main(){
                 "addPerson" -> {
                     db.addPerson(tmp.getAsJsonObject("data"))
                     call.respond("OK")
-                }
-
-                "getPerson" -> {
-                    call.respond(db.getUserInfoByKey(tmp.getAsJsonObject("data")))
                 }
 
                 "deletePerson" -> {
@@ -122,6 +123,10 @@ fun Application.main(){
 
         get("/bot/db/persons/vknotice") {
             call.respond(db.getUsersVkIdForVkMailing())
+        }
+
+        get("/bot/db/person/{id}"){
+            call.respond(db.getUserInfoByKey(call.parameters["id"]))
         }
 
         delete("/bot/db/persons/delete") {

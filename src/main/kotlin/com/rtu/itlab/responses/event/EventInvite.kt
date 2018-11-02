@@ -3,19 +3,14 @@ package com.rtu.itlab.responses.event
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.ResponseHandler
-import com.rtu.itlab.responses.event.models.EventView
-import com.rtu.itlab.responses.event.models.beginTime
-import com.rtu.itlab.responses.event.models.endTime
-import com.rtu.itlab.responses.event.models.targetParticipantsCount
+import com.rtu.itlab.responses.event.models.*
 
 /**
  * Class of sending a message to the user who was invited to the event.
  * @param tmp - Json info about event
  * @param db - Database with persons info
  */
-class EventInvite(val eventView: EventView, db: DBClient) : ResponseHandler(db) {
-
-    //TODO: Clarify how the invitee id will be obtained
+class EventInvite(private val eventInviteView: EventInviteView, db: DBClient) : ResponseHandler(db) {
 
     override fun send() {
         vk.messages()

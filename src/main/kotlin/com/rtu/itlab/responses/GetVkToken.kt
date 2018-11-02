@@ -31,7 +31,8 @@ class GetVkToken(tmp: JsonObject?, db: DBClient) : ResponseHandler(db){
                                         .message("Поздравляем, ваша учетня запись прикреплена")
                                         .execute()
                                 //result.get().data.vkId = vkId
-                                db!!.addPerson(result.get().data.copy(vkId = vkId.toString()))
+                                db!!.addPerson(result.get().data.copy(vkId = vkId.toString(),vkNotice = true,
+                                        emailNotice = true,phoneNotice = true))
 
                             }
                             result.get().statusCode==26 -> vk.messages()

@@ -9,12 +9,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.rtu.itlab.utils.mapAnyToMapString
 import com.google.gson.JsonObject
 
-
+/**
+ * Status code:
+ * 1-OK
+ * 10-person not found in database
+ */
 class DBClient {
+    private val KEY: String = "id"
+
     private val keyPattern = "[0-9a-z]*-[0-9a-z]*-" +
             "[0-9a-z]*-[0-9a-z]*-[0-9a-z]*"
-
-    private val KEY: String = "id"
 
     private var redisClient: RedisClient? = null
     private var connection: StatefulRedisConnection<String, String>? = null
@@ -56,7 +60,7 @@ class DBClient {
     }
 
     /**
-     * Method for adding person info
+     * Method for adding person info to database
      * vkNotice,emailNotice,phoneNotice - boolean values
      * id,firstName,lastName,phoneNumber,email,vkId - string values
      * example of JsonObject
@@ -74,28 +78,22 @@ class DBClient {
      * @param person Json that should contain person info, example above
      */
     fun addPerson(person: JsonObject) {
-        val id = person.get(KEY).asString
-        person.remove(KEY)
-        val dbUser = Gson().fromJson(person.toString(), DBUser::class.java)
-        dbUser.id = id
-
-        if (!person.has("vkNotice")) dbUser.vkNotice = true
-        if (!person.has("emailNotice")) dbUser.emailNotice = true
-        if (!person.has("phoneNotice")) dbUser.phoneNotice = true
-
-        val map = ObjectMapper().convertValue(dbUser, HashMap<String, String>().javaClass)
-        syncCommands!!.hmset(id, mapAnyToMapString(map))
+        val personClass = Gson().fromJson(person.toString(), DBUser::class.java)
+        val map = ObjectMapper().convertValue(personClass.copy(vkNotice = true,
+                emailNotice = true, phoneNotice = true), HashMap<String, String>().javaClass)
+        map.remove(KEY)
+        syncCommands!!.hmset(personClass.id, mapAnyToMapString(map))
         println("Person added!")
         makeDump()
     }
 
+    /**
+     * Method for adding person to database
+     * @param person DBUser object
+     */
     fun addPerson(person: DBUser) {
-
-        person.vkNotice = true
-        person.emailNotice = true
-        person.phoneNotice = true
-
         val map = ObjectMapper().convertValue(person, HashMap<String, String>().javaClass)
+        map.remove(KEY)
         syncCommands!!.hmset(person.id, mapAnyToMapString(map))
         println("Person added!")
         makeDump()
@@ -111,16 +109,25 @@ class DBClient {
 
     /**
      * Getting Json with info about required person
-     * @param person Json that should contain person KEY value
+     * @param key KEY value in database
      * @return Json with person info
      */
-    fun getUserInfoByKey(person: JsonObject): JsonObject {
+    fun getUserInfoByKey(key: String?): JsonObject {
 
-        val resultMap = syncCommands!!.hgetall(person.get(KEY).asString)
-        resultMap.put(KEY, person.get(KEY).asString)
-        val resultJson = Gson().toJson(resultMap)
+        val resultMap = syncCommands!!.hgetall(key)
+        val resultJson = JsonObject()
+        when (resultMap.isNullOrEmpty()) {
+            false -> {
+                resultMap[KEY] = key //TODO: test kotlin feature 1
+                resultJson.add("data", JsonParser().parse(Gson().toJson(resultMap)))
+                resultJson.addProperty("statusCode", 1)
+            }
+            true -> resultJson.addProperty("statusCode", 10)
+        }
 
-        return JsonParser().parse(resultJson).asJsonObject
+        //resultMap.put(KEY, person.get(KEY).asString)
+
+        return resultJson
     }
 
     /**
@@ -131,17 +138,18 @@ class DBClient {
     fun updatePersonInfo(person: JsonObject): String {
         val id = person.get(KEY).asString
         person.remove(KEY)
-        if (!syncCommands!!.hgetall(id).isEmpty()) {
-            var map: Map<String, String> = HashMap()
-            map = Gson().fromJson(person, map.javaClass)
-            for (element in map) {
-                if (syncCommands!!.hget(id, element.key) != null)
-                    syncCommands!!.hset(id, element.key, element.value)
+        return when (syncCommands!!.hgetall(id).isNullOrEmpty()) {
+            false -> {
+                var map: Map<String, String> = HashMap()
+                map = Gson().fromJson(person, map.javaClass)
+                for (element in map) {
+                    if (syncCommands!!.hget(id, element.key) != null)
+                        syncCommands!!.hset(id, element.key, element.value)
+                }
 
+                "OK"
             }
-            return "OK"
-        } else {
-            return "Not Found"
+            true -> "Not Found"
         }
     }
 
