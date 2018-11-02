@@ -1,6 +1,8 @@
 package com.rtu.itlab.database
 
-data class DBUser(var id: String, val firstName: String, val lastName: String,
-                  val phoneNumber: String? = null, val email: String? = null,
-                  val vkId: String, var vkNotice: Boolean,
-                  var emailNotice: Boolean , var phoneNotice: Boolean)
+data class DBUser(val id: String, val firstName: String, val lastName: String,
+                  val phoneNumber: String, val email: String,
+                  val vkId: String, val vkNotice: Boolean,
+                  val emailNotice: Boolean, val phoneNotice: Boolean)
+
+inline class UserId(val id: String?)
