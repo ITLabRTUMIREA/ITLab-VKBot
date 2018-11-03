@@ -3,7 +3,6 @@ package com.rtu.itlab
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
-import com.rtu.itlab.database.UserId
 import com.rtu.itlab.responses.*
 import com.rtu.itlab.responses.event.*
 import com.rtu.itlab.responses.event.models.EventInviteView
