@@ -15,7 +15,10 @@ import com.google.gson.JsonObject
  * 10-person not found in database
  */
 class DBClient {
-    private val KEY: String = "id"
+    private val userJsonKey: String = "id"
+    private val eventJsonKey: String = "id"
+    private val userTableKey: String = "users.id:"
+    private val eventTableKey: String = "events.id:"
 
     private val keyPattern = "[0-9a-z]*-[0-9a-z]*-" +
             "[0-9a-z]*-[0-9a-z]*-[0-9a-z]*"
@@ -46,7 +49,7 @@ class DBClient {
      * @param ip pc server address
      * @param port pc port address
      */
-    fun createConnectionToDB(password: String = "", ip: String = "127.0.0.1", port: Int = 6379) {
+    private fun createConnectionToDB(password: String = "", ip: String = "127.0.0.1", port: Int = 6379) {
 
         try {
             redisClient = RedisClient.create("redis://$password@$ip:$port/0")
@@ -81,8 +84,9 @@ class DBClient {
         val personClass = Gson().fromJson(person.toString(), DBUser::class.java)
         val map = ObjectMapper().convertValue(personClass.copy(vkNotice = true,
                 emailNotice = true, phoneNotice = true), HashMap<String, String>().javaClass)
-        map.remove(KEY)
-        syncCommands!!.hmset(personClass.id, mapAnyToMapString(map))
+        map.remove(userJsonKey)
+        val userKey = userTableKey + personClass.id
+        syncCommands!!.hmset(userKey, mapAnyToMapString(map))
         println("Person added!")
         makeDump()
     }
@@ -92,9 +96,10 @@ class DBClient {
      * @param person DBUser object
      */
     fun addPerson(person: DBUser) {
+        val userKey = userTableKey + person.id
         val map = ObjectMapper().convertValue(person, HashMap<String, String>().javaClass)
-        map.remove(KEY)
-        syncCommands!!.hmset(person.id, mapAnyToMapString(map))
+        map.remove(userJsonKey)
+        syncCommands!!.hmset(userKey, mapAnyToMapString(map))
         println("Person added!")
         makeDump()
     }
@@ -113,19 +118,21 @@ class DBClient {
      * @return Json with person info
      */
     fun getUserInfoByKey(key: String?): JsonObject {
+        val userKey = userTableKey + key
 
-        val resultMap = syncCommands!!.hgetall(key)
+        val resultMap = syncCommands!!.hgetall(userKey)
         val resultJson = JsonObject()
+
         when (resultMap.isNullOrEmpty()) {
             false -> {
-                resultMap[KEY] = key //TODO: test kotlin feature 1
+                resultMap[userJsonKey] = userKey //TODO: test kotlin feature 1
                 resultJson.add("data", JsonParser().parse(Gson().toJson(resultMap)))
                 resultJson.addProperty("statusCode", 1)
             }
             true -> resultJson.addProperty("statusCode", 10)
         }
 
-        //resultMap.put(KEY, person.get(KEY).asString)
+        //resultMap.put(KEY, person.get(KEY).asString) //old working version
 
         return resultJson
     }
@@ -136,15 +143,17 @@ class DBClient {
      * @return result of updating
      */
     fun updatePersonInfo(person: JsonObject): String {
-        val id = person.get(KEY).asString
-        person.remove(KEY)
-        return when (syncCommands!!.hgetall(id).isNullOrEmpty()) {
+
+        val id = person.get(userJsonKey).asString
+        person.remove(userJsonKey)
+        val userKey = userTableKey + id
+        return when (syncCommands!!.hgetall(userKey).isNullOrEmpty()) {
             false -> {
-                var map: Map<String, String> = HashMap()
-                map = Gson().fromJson(person, map.javaClass)
-                for (element in map) {
-                    if (syncCommands!!.hget(id, element.key) != null)
-                        syncCommands!!.hset(id, element.key, element.value)
+                val mapOfNewValues: Map<String, String> = Gson().fromJson(person, HashMap<String, String>().javaClass)
+
+                mapOfNewValues.forEach { key, value ->
+                    if (!syncCommands!!.hget(userKey, key).isNullOrEmpty())
+                        syncCommands!!.hset(userKey, key, value)
                 }
 
                 "OK"
@@ -153,6 +162,7 @@ class DBClient {
         }
     }
 
+    //TODO : START FROM HERE
     /**
      * Deleting all persons from database
      */
