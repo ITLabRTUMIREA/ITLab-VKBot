@@ -16,7 +16,6 @@
         <kotlin.version>1.3.0</kotlin.version>
         <junit.version>4.12</junit.version>
         <ktor.version>1.0.0-beta-3</ktor.version>
-        <kotlinx.coroutines.core.version>1.0.0</kotlinx.coroutines.core.version>
         <javax.mail.version>1.4.7</javax.mail.version>
         <jackson.version>2.9.4.1</jackson.version>
         <jsoup.version>1.11.3</jsoup.version>
@@ -26,8 +25,7 @@
         <fuel.version>1.12.1</fuel.version>
         <com.typesafe.version>1.2.1</com.typesafe.version>
         <maven.versiom>3.2.0</maven.versiom>
-        <kotlin.compiler.languageVersion>1.0</kotlin.compiler.languageVersion>
-
+        <kotlin.code.style>official</kotlin.code.style>
         <main.class>com.rtu.itlab.MainKt</main.class>
         <jarName>service</jarName>
     </properties>
@@ -36,14 +34,8 @@
 
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib</artifactId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
             <version>${kotlin.version}</version>
-        </dependency>
-
-        <dependency>
-        <groupId>org.jetbrains.kotlinx</groupId>
-        <artifactId>kotlinx-coroutines-core</artifactId>
-        <version>${kotlinx.coroutines.core.version}</version>
         </dependency>
 
         <dependency>
@@ -83,12 +75,6 @@
             <artifactId>lettuce-core</artifactId>
             <version>${lettuce.version}</version>
         </dependency>
-
-        <!--<dependency>-->
-        <!--<groupId>io.ktor</groupId>-->
-        <!--<artifactId>ktor-server-core</artifactId>-->
-        <!--<version>${ktor.version}</version>-->
-        <!--</dependency>-->
 
         <dependency>
             <groupId>io.ktor</groupId>
@@ -142,33 +128,9 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
-
+        <sourceDirectory>src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.versiom}</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>${main.class}</mainClass>
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
@@ -189,16 +151,7 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <experimentalCoroutines>enable</experimentalCoroutines>
-                    <!--<jvmTarget>1.8</jvmTarget>-->
-                    <!--<args>-->
-                        <!--<arg>-experimentalCoroutines=enable</arg>-->
-                        <!--<arg>-Xcoroutines=enable</arg>-->
-                    <!--</args>-->
-                </configuration>
             </plugin>
-
         </plugins>
     </build>
 

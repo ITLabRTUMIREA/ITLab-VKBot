@@ -17,7 +17,6 @@ import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
-//import kotlinx.coroutines
 
 
 fun Application.main() {
@@ -72,10 +71,12 @@ fun Application.main() {
                 "EventReminder" -> {
                     EventReminder(Gson().fromJson(tmp, EventView::class.java), db).send()
                 }
+
                 "confirmation" -> {
                     call.respond(config.getString("server.response"))
                     // VK synergy
                 }
+
                 "message_new" -> {
                     GetVkToken(tmp, db).send()
                     call.respond("OK") // Code Handler
@@ -99,7 +100,6 @@ fun Application.main() {
                 }
 
                 "addPersons" -> {
-                    //call.respond(db.addPersons(tmp.getAsJsonArray("data")))
                     call.respond(db.addPersons(Gson().fromJson(tmp.getAsJsonArray("data"), Array<DBUser>::class.java)))
                 }
             }

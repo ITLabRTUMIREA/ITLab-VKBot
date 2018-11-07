@@ -8,6 +8,7 @@ import java.util.HashMap
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.rtu.itlab.utils.mapAnyToMapString
 import com.google.gson.JsonObject
+import java.util.regex.Pattern
 
 /**
  * Status code:
@@ -17,6 +18,7 @@ import com.google.gson.JsonObject
  * 12 - error updating person info
  * 13 - some errors while getting persons
  * 14 - some errors while adding persons
+ * 15 - cant rewrite (some) person(s)
  */
 
 /**
@@ -34,6 +36,8 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
 
     private val usersKeyPattern = userTableKey + "[0-9a-z]*-[0-9a-z]*-" +
             "[0-9a-z]*-[0-9a-z]*-[0-9a-z]*"
+
+    private val phoneNumberPattern = "\\+7[0-9]{10}"
 
     private var redisClient: RedisClient? = null
     private var connection: StatefulRedisConnection<String, String>? = null
@@ -70,12 +74,30 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
      */
     fun addPerson(person: JsonObject): JsonObject {
         val personClass = Gson().fromJson(person.toString(), DBUser::class.java)
-        val map = ObjectMapper().convertValue(personClass.copy(vkNotice = true,
-                emailNotice = true, phoneNotice = true), HashMap<String, String>().javaClass)
-        map.remove(userJsonKey)
-        val userKey = userTableKey + personClass.id
+        return addPerson(personClass.copy(vkNotice = true, emailNotice = true, phoneNotice = true))
+    }
 
-        return addPerson(userKey, map)
+    /**
+     * Function for phone number adjustment if required
+     * @param phoneNumber - old number
+     * @return number after adjustment
+     */
+    private fun numberAdjustment(phoneNumber: String?): String {
+        var newNumber = ""
+        if (!phoneNumber.isNullOrEmpty())
+            newNumber = when (phoneNumber.matches(Regex(phoneNumberPattern))) {
+                true -> phoneNumber
+                false -> {
+                    println("here")
+                    if (phoneNumber.startsWith("8")) {
+                        println("H2")
+                        phoneNumber.replaceFirst("8", "+7")
+                    }
+                    phoneNumber.replace("[.-() ]", "")
+                    phoneNumber
+                }
+            }
+        return newNumber
     }
 
     /**
@@ -84,7 +106,7 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
      */
     fun addPerson(person: DBUser): JsonObject {
         val userKey = userTableKey + person.id
-        val map = ObjectMapper().convertValue(person, HashMap<String, String>().javaClass)
+        val map = ObjectMapper().convertValue(person, HashMap<String, Any?>().javaClass)
         map.remove(userJsonKey)
         return addPerson(userKey, map)
     }
@@ -94,21 +116,26 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
      * @param userKey - user key in database
      * @param map - hash(user info) in database
      */
-    private fun addPerson(userKey: String, map: HashMap<String, String>): JsonObject {
+    private fun addPerson(userKey: String, map: HashMap<String, Any?>): JsonObject {
         val resultJson = JsonObject()
-        when (syncCommands!!.hmset(userKey, mapAnyToMapString(map))) {
+        if (syncCommands!!.exists(userKey) == 0L) {
+            when (syncCommands!!.hmset(userKey, mapAnyToMapString(map))) {
 
-            "OK" -> {
-                println("Person added!")
-                makeDump()
-                resultJson.addProperty("statusCode", 1)
+                "OK" -> {
+                    println("Person added!")
+                    makeDump()
+                    resultJson.addProperty("statusCode", 1)
+                }
+
+                else -> {
+                    println("Error adding person")
+                    resultJson.addProperty("statusCode", 11)
+                }
+
             }
-
-            else -> {
-                println("Error adding person")
-                resultJson.addProperty("statusCode", 11)
-            }
-
+        } else {
+            println("Error adding person. Cant rewrite person!")
+            resultJson.addProperty("statusCode", 15)
         }
 
         return resultJson
@@ -128,7 +155,10 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
      * @return Json with person info
      */
     fun getUserInfoByKey(key: String?): JsonObject {
-        val userKey = userTableKey + key
+        val userKey = when (key!!.startsWith(userTableKey)) {
+            true -> key
+            else -> userTableKey + key
+        }
 
         val resultMap = syncCommands!!.hgetall(userKey)
         val resultJson = JsonObject()
@@ -136,7 +166,7 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
         when (resultMap.isNullOrEmpty()) {
 
             false -> {
-                resultMap[userJsonKey] = key //TODO: test kotlin feature 1
+                resultMap[userJsonKey] = userKey.removePrefix(userTableKey)
                 resultJson.add("data", JsonParser().parse(Gson().toJson(resultMap)))
                 println("User information received")
                 resultJson.addProperty("statusCode", 1)
@@ -160,13 +190,17 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
      * @return result of updating
      */
     fun updatePersonInfo(person: JsonObject): JsonObject {
+        val key = person.get(userJsonKey).asString
 
-        val id = person.get(userJsonKey).asString
+        val userKey = when (key!!.startsWith(userTableKey)) {
+            true -> key
+            else -> userTableKey + key
+        }
+
         person.remove(userJsonKey)
-        val userKey = userTableKey + id
+
         val resultJson = JsonObject()
-        //return when (syncCommands!!.hgetall(userKey).isNullOrEmpty()) {
-        when (syncCommands!!.exists(userKey)) { //TODO : TEST UPDATE
+        when (syncCommands!!.exists(userKey)) {
 
             0L -> {
                 resultJson.addProperty("statusCode", 12)
@@ -176,10 +210,11 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
             else -> {
                 val mapOfNewValues: Map<String, String> = Gson().fromJson(person, HashMap<String, String>().javaClass)
 
-                mapOfNewValues.forEach { key, value ->
-                    if (!syncCommands!!.hget(userKey, key).isNullOrEmpty())
-                        syncCommands!!.hset(userKey, key, value)
+                mapOfNewValues.forEach { k, v ->
+                    if (syncCommands!!.hget(userKey, k) != null)
+                        syncCommands!!.hset(userKey, k, v)
                 }
+                println("Person info is updated!")
                 resultJson.addProperty("statusCode", 1)
             }
 
@@ -219,7 +254,6 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
 
         keys.forEach { key ->
             val userInfo = getUserInfoByKey(key)
-
             when (userInfo.get("statusCode").asInt) {
                 1 -> {
                     persons.add(userInfo.get("data"))
@@ -248,8 +282,14 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
      * @param id person id
      */
     fun deletePerson(id: String?): JsonObject {
+
+        val userKey = when (id!!.startsWith(userTableKey)) {
+            true -> id
+            else -> userTableKey + id
+        }
+
         val jsonResult = JsonObject()
-        when (syncCommands!!.del(id)) {
+        when (syncCommands!!.del(userKey)) {
             0L -> {
                 jsonResult.addProperty("statusCode", 10)
                 println("Person not deleted!")
@@ -327,26 +367,7 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
      * @param persons array of persons
      */
     fun addPersons(persons: JsonArray): JsonObject {
-        var wasErrors = false
-        val jsonResult = JsonObject()
-
-        persons.forEach {
-            when (addPerson(it.asJsonObject).get("statusCode").asInt) {
-                11 -> {
-                    wasErrors = true
-                }
-            }
-        }
-
-        if (wasErrors) {
-            jsonResult.addProperty("statusCode", 14)
-            println("Was some errors while adding persons")
-        } else {
-            jsonResult.addProperty("statusCode", 1)
-            println("Persons added")
-        }
-
-        return jsonResult
+        return addPersons(Gson().fromJson(persons, Array<DBUser>::class.java))
     }
 
     /**
@@ -355,19 +376,26 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
      */
     fun addPersons(persons: Array<DBUser>): JsonObject {
         var wasErrors = false
+        var alreadyExists = false
         val jsonResult = JsonObject()
 
         persons.forEach {
-            when (addPerson(it).get("statusCode").asInt) {
+            when (addPerson(it.copy(vkNotice = true, emailNotice = true, phoneNotice = true)).get("statusCode").asInt) {
                 11 -> {
                     wasErrors = true
+                }
+                15 -> {
+                    alreadyExists = true
                 }
             }
         }
 
         if (wasErrors) {
             jsonResult.addProperty("statusCode", 14)
-            println("Was some errors while adding persons")
+            println("Was some errors or warnings while adding persons")
+        } else if (alreadyExists) {
+            jsonResult.addProperty("statusCode", 15)
+            println("Some persons already exists in database. Cant rewrite")
         } else {
             jsonResult.addProperty("statusCode", 1)
             println("Persons added")
