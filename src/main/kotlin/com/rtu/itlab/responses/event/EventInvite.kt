@@ -15,12 +15,9 @@ class EventInvite(private val eventInviteView: EventInviteView, db: DBClient) : 
     override fun send() {
         vk.messages()
                 .send(actor, userIds)
-                .message("Вы были приглашены на событие\n«${eventView.title}»" +
-                        "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                        "\nНачало: ${eventView.beginTime()}" +
-                        "\nОкончание: ${eventView.endTime()}" +
-                        "\nАдрес проведения мероприятия: ${eventView.address}" +
-                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}" +
+                .message("Вы были приглашены на событие\n«${eventInviteView.title}»" +
+                        "\nНачало: ${eventInviteView.beginTime}" +
+                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventInviteView.id}" +
                         "\nСвое участие можете подтвердить в личном кабинете по ссылке: https://itlab.azurewebsites.net/notifications")
                 .execute()
     }
@@ -28,12 +25,9 @@ class EventInvite(private val eventInviteView: EventInviteView, db: DBClient) : 
     fun send(userId: Int) {
         vk.messages()
                 .send(actor, userId)
-                .message("Вы были приглашены на событие\n«${eventView.title}»" +
-                        "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                        "\nНачало: ${eventView.beginTime()}" +
-                        "\nОкончание: ${eventView.endTime()}" +
-                        "\nАдрес проведения мероприятия: ${eventView.address}" +
-                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}" +
+                .message("Вы были приглашены на событие\n«${eventInviteView.title}»" +
+                        "\nНачало: ${eventInviteView.beginTime}" +
+                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventInviteView.id}" +
                         "\nСвое участие можете подтвердить в личном кабинете по ссылке: https://itlab.azurewebsites.net/notifications")
                 .execute()
     }
