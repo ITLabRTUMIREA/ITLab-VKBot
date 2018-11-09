@@ -6,7 +6,7 @@ import io.ktor.server.netty.Netty
 
 //Server port
 private const val SPORTARG = "-sp"
-private var sPort = 8080
+private var sPort = 80
 
 fun main(args: Array<String>) {
 
