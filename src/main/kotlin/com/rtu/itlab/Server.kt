@@ -16,12 +16,18 @@ import io.ktor.request.receiveStream
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
+import java.io.File
 import java.io.InputStreamReader
 
 
 fun Application.main() {
 
-    val config = ConfigFactory.load()
+
+    val file = File("application.conf")
+
+
+    val l = file.absolutePath
+    val config = ConfigFactory.parseFile(file)
     val db = DBClient(config.getString("database.password"), config.getString("database.url"), config.getInt("database.port"))
 
     install(ContentNegotiation) {
