@@ -25,8 +25,6 @@ fun Application.main() {
 
     val file = File("application.conf")
 
-
-    val l = file.absolutePath
     val config = ConfigFactory.parseFile(file)
     val db = DBClient(config.getString("database.password"), config.getString("database.url"), config.getInt("database.port"))
 
@@ -44,9 +42,11 @@ fun Application.main() {
             val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
 
             when (tmp!!.get("type").asString) {
+
                 "EventNew" -> {
                     EventNew(Gson().fromJson(tmp.get("data"), EventView::class.java), db).send()
                 }
+
                 "EventInvite" -> {
                     EventInvite(Gson().fromJson(tmp, EventInviteView::class.java), db).send()
                 }
