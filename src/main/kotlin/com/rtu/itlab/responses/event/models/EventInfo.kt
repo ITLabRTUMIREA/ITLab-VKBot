@@ -1,8 +1,11 @@
 package com.rtu.itlab.responses.event.models
 
+import com.rtu.itlab.database.DBUser
 import java.util.*
 
-data class PlaceView(val targetParticipantsCount: Int)
+data class InvitedView(val user: DBUser)
+
+data class PlaceView(val targetParticipantsCount: Int, val invited: List<InvitedView>)
 
 data class ShiftView(val beginTime: Date, val endTime: Date, val places: List<PlaceView>)
 
@@ -18,4 +21,8 @@ fun EventView.beginTime(): Date {
 
 fun EventView.endTime(): Date {
     return this.shifts.maxBy { it.endTime }!!.endTime
+}
+
+fun EventView.invited(): List<InvitedView> {
+    return this.shifts.flatMap { it.places }.flatMap { it.invited }
 }

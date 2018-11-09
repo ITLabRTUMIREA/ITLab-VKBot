@@ -139,6 +139,7 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
         }
 
         return resultJson
+
     }
 
     /**
