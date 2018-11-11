@@ -8,7 +8,7 @@ import com.rtu.itlab.responses.*
 import com.rtu.itlab.responses.event.*
 import com.rtu.itlab.responses.event.models.EventInviteView
 import com.rtu.itlab.responses.event.models.EventView
-import com.typesafe.config.ConfigFactory
+import com.rtu.itlab.utils.Config
 import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
@@ -16,17 +16,21 @@ import io.ktor.request.receiveStream
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
-import java.io.File
 import java.io.InputStreamReader
 
 
 fun Application.main() {
 
+    val config = Config("application.conf").companion.config!!
+    var db = DBClient()
 
-    val file = File("application.conf")
-
-    val config = ConfigFactory.parseFile(file)
-    val db = DBClient(config.getString("database.password"), config.getString("database.url"), config.getInt("database.port"))
+    if (!config.isEmpty) {
+        db = DBClient(
+            config.getString("database.password"),
+            config.getString("database.url"),
+            config.getInt("database.port")
+        )
+    }
 
     install(ContentNegotiation) {
         gson {
@@ -39,7 +43,8 @@ fun Application.main() {
         get("/") { call.respondText { "It's OK" } }
 
         post("/bot") {
-            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+            val tmp: JsonObject? =
+                Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
 
             when (tmp!!.get("type").asString) {
 
@@ -50,6 +55,11 @@ fun Application.main() {
                 "EventInvite" -> {
                     EventInvite(Gson().fromJson(tmp, EventInviteView::class.java), db).send()
                 }
+
+                "reloadConfig" -> {
+
+                }
+
 
                 "EquipmentAdded" -> {
                     EquipmentAdded(tmp).send()
@@ -83,17 +93,20 @@ fun Application.main() {
                     // VK synergy
                 }
 
+
                 "message_new" -> {
                     GetVkToken(tmp, db).send()
                     call.respond("OK") // Code Handler
                 }
+
                 else -> call.respondText { "It's Ok, just Wrong" }
             }
         }
 
         post("/bot/db") {
 
-            val tmp: JsonObject? = Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
+            val tmp: JsonObject? =
+                Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
 
             when (tmp!!.get("type").asString) {
 
@@ -106,8 +119,16 @@ fun Application.main() {
                 }
 
                 "addPersons" -> {
-                    call.respond(db.addPersons(Gson().fromJson(tmp.getAsJsonArray("data"), Array<DBUser>::class.java)))
+                    call.respond(
+                        db.addPersons(
+                            Gson().fromJson(
+                                tmp.getAsJsonArray("data"),
+                                Array<DBUser>::class.java
+                            )
+                        )
+                    )
                 }
+
             }
         }
 

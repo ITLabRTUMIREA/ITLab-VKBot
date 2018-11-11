@@ -23,6 +23,6 @@ fun EventView.endTime(): Date {
     return this.shifts.maxBy { it.endTime }!!.endTime
 }
 
-fun EventView.invited(): List<InvitedView> {
-    return this.shifts.flatMap { it.places }.flatMap { it.invited }
+fun EventView.invited(): List<DBUser> {
+    return this.shifts.flatMap { it.places }.flatMap { it.invited }.map { it.user }
 }
