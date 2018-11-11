@@ -8,7 +8,9 @@ import java.util.HashMap
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.rtu.itlab.utils.mapAnyToMapString
 import com.google.gson.JsonObject
-import java.util.regex.Pattern
+import com.rtu.itlab.utils.Config
+import com.typesafe.config.ConfigFactory
+import java.io.File
 
 /**
  * Status code:
@@ -19,6 +21,8 @@ import java.util.regex.Pattern
  * 13 - some errors while getting persons
  * 14 - some errors while adding persons
  * 15 - cant rewrite (some) person(s)
+ * 16 - cant connect to database
+ * 17 - error work with database
  */
 
 /**
@@ -27,7 +31,7 @@ import java.util.regex.Pattern
  * @param ip database server address
  * @param port database port address
  */
-class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379) {
+class DBClient {
 
     private val userJsonKey: String = "id"
     private val eventJsonKey: String = "id"
@@ -43,7 +47,20 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
     private var connection: StatefulRedisConnection<String, String>? = null
     private var syncCommands: RedisCommands<String, String>? = null
 
-    init {
+    /**
+     * test Connection to database
+     */
+    fun isConnected(): Boolean {
+        return connection!!.isOpen
+    }
+
+    constructor(password: String = "", ip: String = "127.0.0.1", port: Int = 6379) {
+        connectToDatabase(password, ip, port)
+    }
+
+    constructor() {}
+
+    private fun connectToDatabase(password: String, ip: String, port: Int) {
         try {
             redisClient = RedisClient.create("redis://$password@$ip:$port/0")
             connection = redisClient!!.connect()
@@ -52,6 +69,28 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
         } catch (ex: RedisConnectionException) {
             println(ex.message)
         }
+    }
+
+    /**
+     * Test on connection to database and reconnect if necessary
+     */
+    fun reconnectToDatabaseWithOtherConfigProperties(): JsonObject {
+        val result = JsonObject()
+        val config = Config.config!!
+
+        connectToDatabase(
+            config.getString("database.password"),
+            config.getString("database.url"),
+            config.getInt("database.port")
+        )
+
+        if (isConnected()) {
+            result.addProperty("statusCode", 1)
+        } else {
+            result.addProperty("statusCode", 16)
+        }
+
+        return result
     }
 
     /**
@@ -111,33 +150,55 @@ class DBClient(password: String = "", ip: String = "127.0.0.1", port: Int = 6379
         return addPerson(userKey, map)
     }
 
+    private var reconnected = true
+
     /**
      * Adding person to database with key: userKey and hashes: map
      * @param userKey - user key in database
      * @param map - hash(user info) in database
      */
     private fun addPerson(userKey: String, map: HashMap<String, Any?>): JsonObject {
-        val resultJson = JsonObject()
-        if (syncCommands!!.exists(userKey) == 0L) {
-            when (syncCommands!!.hmset(userKey, mapAnyToMapString(map))) {
+        var resultJson = JsonObject()
+        if (isConnected()) {
+            try {
+                if (syncCommands!!.exists(userKey) == 0L) {
+                    when (syncCommands!!.hmset(userKey, mapAnyToMapString(map))) {
 
-                "OK" -> {
-                    println("Person added!")
-                    makeDump()
-                    resultJson.addProperty("statusCode", 1)
+                        "OK" -> {
+                            println("Person added!")
+                            makeDump()
+                            resultJson.addProperty("statusCode", 1)
+                        }
+
+                        else -> {
+                            println("Error adding person")
+                            resultJson.addProperty("statusCode", 11)
+                        }
+
+                    }
+                } else {
+                    println("Error adding person. Cant rewrite person!")
+                    resultJson.addProperty("statusCode", 15)
                 }
 
-                else -> {
-                    println("Error adding person")
-                    resultJson.addProperty("statusCode", 11)
+            } catch (ex: io.lettuce.core.RedisCommandExecutionException) {
+                if (ex.message.equals("NOAUTH Authentication required")) {
+                    if(reconnected) {
+                        reconnectToDatabaseWithOtherConfigProperties()
+                        resultJson = addPerson(userKey, map)
+                        reconnected = false
+                    }else{
+                        reconnected = true
+                        resultJson.addProperty("statusCode", 17)
+                    }
+                } else {
+                    resultJson.addProperty("statusCode", 17)
                 }
-
             }
-        } else {
-            println("Error adding person. Cant rewrite person!")
-            resultJson.addProperty("statusCode", 15)
-        }
 
+        } else {
+            resultJson.addProperty("statusCode", 16)
+        }
         return resultJson
 
     }

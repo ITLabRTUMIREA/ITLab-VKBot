@@ -13,23 +13,16 @@ import com.rtu.itlab.responses.event.models.*
 class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler(db) {
 
     override fun send() {
-
-        eventView.invited().forEach {
-            println(it.user)
-        }
-
-            if (!userIds.isNullOrEmpty() && userIds.isNotEmpty()) {
-                vk.messages()
-                    .send(actor, userIds)
-                    .message(
-                        "Было создано новое событие!\n«${eventView.title}»" +
-                                "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                                "\nНачало: ${eventView.beginTime()}" +
-                                "\nОкончание: ${eventView.endTime()}" +
-                                "\nАдрес проведения мероприятия: ${eventView.address}" +
-                                "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}"
-                    )
-                    .execute()
-            }
-        }
+        vk.messages()
+            .send(actor, userIds)
+            .message(
+                "Было создано новое событие!\n«${eventView.title}»" +
+                        "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
+                        "\nНачало: ${eventView.beginTime()}" +
+                        "\nОкончание: ${eventView.endTime()}" +
+                        "\nАдрес проведения мероприятия: ${eventView.address}" +
+                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}"
+            )
+            .execute()
     }
+}
