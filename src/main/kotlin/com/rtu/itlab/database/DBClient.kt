@@ -10,6 +10,8 @@ import com.rtu.itlab.utils.mapAnyToMapString
 import com.google.gson.JsonObject
 import com.rtu.itlab.utils.Config
 import com.typesafe.config.ConfigFactory
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 
 /**
@@ -33,6 +35,7 @@ import java.io.File
  */
 class DBClient {
 
+    private val logger: Logger = LoggerFactory.getLogger("com.rtu.itlab.database.DBClient")
     private val userJsonKey: String = "id"
     private val eventJsonKey: String = "id"
     private val userTableKey: String = "users.id:"
@@ -43,6 +46,12 @@ class DBClient {
 
     private val phoneNumberPattern = "\\+7[0-9]{10}"
 
+    constructor(password: String, ip: String, port: Int) {
+        connectToDatabase(password, ip, port)
+    }
+
+    constructor()
+
     private var redisClient: RedisClient? = null
     private var connection: StatefulRedisConnection<String, String>? = null
     private var syncCommands: RedisCommands<String, String>? = null
@@ -51,23 +60,17 @@ class DBClient {
      * test Connection to database
      */
     fun isConnected(): Boolean {
-        return connection!!.isOpen
+        return connection != null && connection!!.isOpen
     }
-
-    constructor(password: String = "", ip: String = "127.0.0.1", port: Int = 6379) {
-        connectToDatabase(password, ip, port)
-    }
-
-    constructor() {}
 
     private fun connectToDatabase(password: String, ip: String, port: Int) {
         try {
             redisClient = RedisClient.create("redis://$password@$ip:$port/0")
             connection = redisClient!!.connect()
             syncCommands = connection!!.sync()
-            println("Connected to redis database")
+            logger.info("Connected to database.")
         } catch (ex: RedisConnectionException) {
-            println(ex.message)
+            logger.error(ex.message)
         }
     }
 
@@ -75,6 +78,7 @@ class DBClient {
      * Test on connection to database and reconnect if necessary
      */
     fun reconnectToDatabaseWithOtherConfigProperties(): JsonObject {
+        logger.error("Trying to reconnect to database")
         val result = JsonObject()
         val config = Config.config!!
 
@@ -85,6 +89,7 @@ class DBClient {
         )
 
         if (isConnected()) {
+            //logger.info("Connected to database")
             result.addProperty("statusCode", 1)
         } else {
             result.addProperty("statusCode", 16)
@@ -165,39 +170,50 @@ class DBClient {
                     when (syncCommands!!.hmset(userKey, mapAnyToMapString(map))) {
 
                         "OK" -> {
-                            println("Person added!")
+                            logger.info("Person added!")
                             makeDump()
                             resultJson.addProperty("statusCode", 1)
                         }
 
                         else -> {
-                            println("Error adding person")
+                            logger.error("Error adding person")
                             resultJson.addProperty("statusCode", 11)
                         }
 
                     }
                 } else {
-                    println("Error adding person. Cant rewrite person!")
+                    logger.warn("Error adding person. Cant rewrite person!")
                     resultJson.addProperty("statusCode", 15)
                 }
 
             } catch (ex: io.lettuce.core.RedisCommandExecutionException) {
+                logger.error(ex.message)
                 if (ex.message.equals("NOAUTH Authentication required")) {
-                    if(reconnected) {
+                    if (reconnected) {
+                        reconnected = false
                         reconnectToDatabaseWithOtherConfigProperties()
                         resultJson = addPerson(userKey, map)
-                        reconnected = false
-                    }else{
+
+                    } else {
                         reconnected = true
                         resultJson.addProperty("statusCode", 17)
                     }
                 } else {
+                    logger.error("Connection to database was lost")
                     resultJson.addProperty("statusCode", 17)
                 }
             }
 
         } else {
-            resultJson.addProperty("statusCode", 16)
+
+            if (reconnectToDatabaseWithOtherConfigProperties().get("statusCode").asInt == 1 && reconnected) {
+                reconnected = false
+                resultJson = addPerson(userKey, map)
+                reconnected = true
+            } else {
+                logger.error("Not connected to database")
+                resultJson.addProperty("statusCode", 16)
+            }
         }
         return resultJson
 
@@ -230,12 +246,12 @@ class DBClient {
             false -> {
                 resultMap[userJsonKey] = userKey.removePrefix(userTableKey)
                 resultJson.add("data", JsonParser().parse(Gson().toJson(resultMap)))
-                println("User information received")
+                logger.info("User information received")
                 resultJson.addProperty("statusCode", 1)
             }
 
             true -> {
-                println("Can't get user info")
+                logger.error("Can't get user info")
                 resultJson.addProperty("statusCode", 10)
             }
 
@@ -292,6 +308,7 @@ class DBClient {
         syncCommands!!.flushall() //TODO : TEST COMMAND
         val resultJson = JsonObject()
         resultJson.addProperty("statusCode", 1)
+        logger.info("All persons deleted")
 //        val keys = syncCommands!!.keys(keyPattern)
 //        for (key in keys) {
 //            val jsonObject = JsonObject()
@@ -330,10 +347,10 @@ class DBClient {
         resultJson.add("data", persons)
 
         if (wasErrors) {
-            println("Persons got with some errors")
+            logger.info("Persons got with some errors")
             resultJson.addProperty("statusCode", 13)
         } else {
-            println("Persons got!")
+            logger.info("Persons got!")
             resultJson.addProperty("statusCode", 1)
         }
         return resultJson
@@ -354,11 +371,11 @@ class DBClient {
         when (syncCommands!!.del(userKey)) {
             0L -> {
                 jsonResult.addProperty("statusCode", 10)
-                println("Person not deleted!")
+                logger.info("Person not deleted!")
             }
             else -> {
                 jsonResult.addProperty("statusCode", 1)
-                println("Person deleted!")
+                logger.info("Person deleted!")
                 makeDump()
             }
         }
@@ -390,7 +407,10 @@ class DBClient {
      */
     fun getUsersVkIdForVkMailing(): Set<Int> {
         val result = mutableSetOf<Int>()
-        val keys = syncCommands!!.keys(usersKeyPattern)
+        val keys = when (isConnected()) {
+            true -> syncCommands!!.keys(usersKeyPattern)
+            else -> mutableListOf()
+        }
 
         keys.forEach { key ->
             val vkId = syncCommands!!.hget(key, "vkId")
@@ -403,6 +423,7 @@ class DBClient {
 
         return result
     }
+
 
     /**
      * Get a set of users phones numbers who want to receive notifications by phone.
@@ -454,16 +475,17 @@ class DBClient {
 
         if (wasErrors) {
             jsonResult.addProperty("statusCode", 14)
-            println("Was some errors or warnings while adding persons")
+            logger.info("Was some errors or warnings while adding persons")
         } else if (alreadyExists) {
             jsonResult.addProperty("statusCode", 15)
-            println("Some persons already exists in database. Cant rewrite")
+            logger.info("Some persons already exists in database. Cant rewrite")
         } else {
             jsonResult.addProperty("statusCode", 1)
-            println("Persons added")
+            logger.info("Persons added")
         }
 
         return jsonResult
     }
+
 }
 

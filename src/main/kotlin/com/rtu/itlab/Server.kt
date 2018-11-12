@@ -17,9 +17,11 @@ import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
+import org.slf4j.LoggerFactory
 
 
 fun Application.main() {
+    val logger = LoggerFactory.getLogger("com.rtu.itlab.Server")
 
     val config = Config("application.conf").companion.config!!
     var db = DBClient()
@@ -49,6 +51,7 @@ fun Application.main() {
             when (tmp!!.get("type").asString) {
 
                 "EventNew" -> {
+                    logger.info("Request for new event.")
                     EventNew(Gson().fromJson(tmp.get("data"), EventView::class.java), db).send()
                 }
 
@@ -104,7 +107,6 @@ fun Application.main() {
         }
 
         post("/bot/db") {
-
             val tmp: JsonObject? =
                 Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
 
@@ -119,6 +121,7 @@ fun Application.main() {
                 }
 
                 "addPersons" -> {
+                    logger.info("Request for adding person.")
                     call.respond(
                         db.addPersons(
                             Gson().fromJson(
