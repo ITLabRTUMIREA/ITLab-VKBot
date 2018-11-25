@@ -424,6 +424,26 @@ class DBClient {
         return result
     }
 
+    /**
+     * Get a set of users vk ids who want to receive notifications by vk.
+     * @param invitedUsers List of invited Users
+     * @return set of VkIds
+     */
+    fun getUsersVkIdForVkMailing(invitedUsers: List<DBUser>): Set<Int> {
+        val result = mutableSetOf<Int>()
+
+        invitedUsers.forEach { dbUser ->
+            when (val vkId = syncCommands!!.hget(eventTableKey + dbUser.id, "vkId")) {
+                null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
+                else -> {
+                    result.add(vkId.toInt())
+                }
+            }
+        }
+
+        return result
+    }
+
 
     /**
      * Get a set of users phones numbers who want to receive notifications by phone.

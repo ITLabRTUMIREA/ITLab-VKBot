@@ -17,6 +17,16 @@ class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler
 
         if (!userIds!!.isEmpty()) {
 
+            val invitedUserIds = when (db) {
+                null -> null
+                else -> db.getUsersVkIdForVkMailing(eventView.invited())
+            }
+
+            if (!invitedUserIds.isNullOrEmpty()) {
+                userIds.minus(invitedUserIds.iterator())
+                EventInvite(eventView, db).send(invitedUserIds)
+            }
+
             vk.messages()
                 .send(actor, userIds)
                 .message(
