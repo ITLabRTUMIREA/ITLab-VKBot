@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
  */
 class EventInvite(private val eventView: EventView, db: DBClient?) : ResponseHandler(db) {
     val logger = LoggerFactory.getLogger("com.rtu.itlab.responses.event.EventInvite")
-    override fun send() {
+    override fun send(): JsonObject {
 //        vk.messages()
 //            .send(actor, userIds)
 //            .message(
@@ -23,6 +23,7 @@ class EventInvite(private val eventView: EventView, db: DBClient?) : ResponseHan
 //                        "\nСвое участие можете подтвердить в личном кабинете по ссылке: https://itlab.azurewebsites.net/notifications"
 //            )
 //            .execute()
+        return JsonObject()
     }
 
     fun send(invitedUsers: Set<Int>) {
@@ -48,7 +49,7 @@ class EventInvite(private val eventView: EventView, db: DBClient?) : ResponseHan
                             "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}"
                 )
                 .execute()
-            logger.info("Messages sent to users VK")
+            logger.info("Invite messages sent to users VK")
         } else {
             logger.error("Can't send messages to users,userList for vkNotification is empty!")
         }

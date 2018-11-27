@@ -15,7 +15,7 @@ import com.rtu.itlab.responses.event.models.targetParticipantsCount
  */
 class EventReminder(val eventView: EventView, db: DBClient) : ResponseHandler(db) {
     //TODO: Clarify whether you need to make a notification system in a few days.
-    override fun send() {
+    override fun send() : JsonObject{
         vk.messages()
                 .send(actor, userIds)
                 .message("Напоминаем вам, что скоро состоится событие «${eventView.title}»" +
@@ -25,6 +25,7 @@ class EventReminder(val eventView: EventView, db: DBClient) : ResponseHandler(db
                         "\nАдрес проведения мероприятия: ${eventView.address}" +
                         "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}")
                 .execute()
+        return resultJson
     }
 
     fun send(userId: Int) {

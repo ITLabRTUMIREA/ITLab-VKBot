@@ -13,10 +13,11 @@ import com.vk.api.sdk.client.actors.GroupActor
  */
 class EventDeleted(val eventView: EventView, db: DBClient) : ResponseHandler(db){
 
-    override fun send() {
+    override fun send() : JsonObject{
         vk.messages()
                 .send(actor, userIds)
                 .message("Событие «${eventView.title}» было удалено(отменено)!")
                 .execute()
+        return resultJson
     }
 }

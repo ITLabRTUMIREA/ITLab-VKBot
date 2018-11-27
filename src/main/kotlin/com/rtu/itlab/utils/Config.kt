@@ -1,42 +1,49 @@
 package com.rtu.itlab.utils
 
 import com.typesafe.config.ConfigFactory
+import org.slf4j.LoggerFactory
 import java.io.File
 
 class Config {
-
     companion object {
         var pathToConfFile: String? = null
-        var config: com.typesafe.config.Config? = null
+    }
+    val companion = Companion
 
-        fun updateConfig() {
-            config = when (pathToConfFile) {
-                null -> ConfigFactory.load()
-                else -> {
-                    val file = File(pathToConfFile)
-                    ConfigFactory.parseFile(file)
-                }
+    var config: com.typesafe.config.Config? = null
+    val logger = LoggerFactory.getLogger("com.rtu.itlab.utils.Config")
+
+    fun loadConfig() {
+        config = when (pathToConfFile) {
+            null -> ConfigFactory.load()
+            else -> {
+                val file = File(pathToConfFile)
+                ConfigFactory.parseFile(file)
             }
         }
-
-        /**
-         * if u want default path: src/main/resources/application.conf, then pathToConfFile must be null
-         * @param pathToConfFile path to config file or null
-         */
-        fun updatePathToConfFile(pathToConfFile: String?) {
-            this.pathToConfFile = pathToConfFile
+        if (config != null || !config!!.isEmpty) {
+            logger.info("Config loaded!")
+        } else {
+            logger.error("Can't load config!")
         }
-
     }
 
-    var companion = Companion
+
+    /**
+     * if u want default path: src/main/resources/application.conf, then pathToConfFile must be null
+     * @param pathToConfFile path to config file or null
+     */
+    fun updatePathToConfFile(pathToConfFile: String?) {
+        this.companion.pathToConfFile = pathToConfFile
+    }
+
 
     /**
      * Default constrictor if config located in the src/main/resources/application.conf
      */
     constructor() {
-        if (config == null)
-            updateConfig()
+        logger.info("Loading config")
+        loadConfig()
     }
 
     /**
@@ -44,10 +51,10 @@ class Config {
      * @param pathToConfFile path to config file
      */
     constructor(pathToConfFile: String?) {
-        if (config == null) {
-            this.companion.pathToConfFile = pathToConfFile
-            updateConfig()
-        }
+        logger.info("Loading config")
+        this.companion.pathToConfFile = pathToConfFile
+        loadConfig()
+
     }
 
 }

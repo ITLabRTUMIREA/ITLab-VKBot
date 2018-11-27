@@ -5,6 +5,8 @@ import com.google.gson.JsonObject
 class GetUserId(tmp: JsonObject?) : ResponseHandler(){
     val userId = tmp?.get("to")!!.asInt
 
-    override fun send() {
+    override fun send() :JsonObject{
+
+        return resultJson
     }
 }

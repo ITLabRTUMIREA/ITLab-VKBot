@@ -80,7 +80,7 @@ class DBClient {
     fun reconnectToDatabaseWithOtherConfigProperties(): JsonObject {
         logger.error("Trying to reconnect to database")
         val result = JsonObject()
-        val config = Config.config!!
+        val config = Config().config!!
 
         connectToDatabase(
             config.getString("database.password"),
@@ -433,10 +433,11 @@ class DBClient {
         val result = mutableSetOf<Int>()
 
         invitedUsers.forEach { dbUser ->
-            when (val vkId = syncCommands!!.hget(eventTableKey + dbUser.id, "vkId")) {
+            when (val vkId = syncCommands!!.hget(userTableKey + dbUser.id, "vkId")) {
                 null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
                 else -> {
-                    result.add(vkId.toInt())
+                    if (vkId.toInt() != 0)
+                        result.add(vkId.toInt())
                 }
             }
         }
@@ -462,6 +463,25 @@ class DBClient {
 
         }
 
+        return result
+    }
+
+    /**
+     * Method for check user for availability in database
+     * @param vkId user vk id
+     */
+    fun isUserInDBByVkId(vkId: Int) : Boolean{
+
+        //TODO: OPTIMIZE CODE
+        var result = false
+        val keys = syncCommands!!.keys(usersKeyPattern)
+        for(key in keys){
+            val userVkId = syncCommands!!.hget(key, "vkId")
+            if (vkId == userVkId.toInt()) {
+                result = true
+                break
+            }
+        }
         return result
     }
 

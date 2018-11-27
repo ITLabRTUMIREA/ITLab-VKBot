@@ -15,7 +15,7 @@ import com.rtu.itlab.responses.event.models.targetParticipantsCount
  */
 class EventChange(val eventView: EventView, db: DBClient) : ResponseHandler(db)  {
     //TODO: Refine what happens when an event changes
-    override fun send() {
+    override fun send() : JsonObject{
         vk.messages()
                 .send(actor, userIds)
                 .message("Событие «$${eventView.title}» было изменено!" +
@@ -25,6 +25,7 @@ class EventChange(val eventView: EventView, db: DBClient) : ResponseHandler(db) 
                         "\nАдрес проведения мероприятия: ${eventView.address}" +
                         "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}")
                 .execute()
+        return resultJson
     }
 
     fun send(userId: Int) {

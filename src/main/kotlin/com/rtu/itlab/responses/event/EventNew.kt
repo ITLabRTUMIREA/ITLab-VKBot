@@ -1,5 +1,6 @@
 package com.rtu.itlab.responses.event
 
+import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.ResponseHandler
 import com.rtu.itlab.responses.event.models.*
@@ -12,8 +13,11 @@ import org.slf4j.LoggerFactory
 
  */
 class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler(db) {
+
     val logger = LoggerFactory.getLogger("com.rtu.itlab.responses.event.EventNew")
-    override fun send() {
+
+    override fun send(): JsonObject {
+
 
         if (!userIds!!.isEmpty()) {
 
@@ -22,13 +26,19 @@ class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler
                 else -> db.getUsersVkIdForVkMailing(eventView.invited())
             }
 
+            val userIdsWithoutInvite: List<Int>
             if (!invitedUserIds.isNullOrEmpty()) {
-                userIds.minus(invitedUserIds.iterator())
+                userIdsWithoutInvite = userIds.subtract(invitedUserIds).toList()
                 EventInvite(eventView, db).send(invitedUserIds)
+            } else {
+                userIdsWithoutInvite = userIds
             }
 
+            logger.info("Invited users: ${invitedUserIds!!.toList()}")
+            logger.info("Not invited users: ${userIdsWithoutInvite.toList()}")
+
             vk.messages()
-                .send(actor, userIds)
+                .send(actor, userIdsWithoutInvite)
                 .message(
                     "Было создано новое событие!\n«${eventView.title}»" +
                             "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
@@ -38,9 +48,12 @@ class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler
                             "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}"
                 )
                 .execute()
-            logger.info("Messages sent to users VK")
+            resultJson.addProperty("statusCode", 1)
+            logger.info("Info messages about new event sent to users VK")
         } else {
+            resultJson.addProperty("statusCode", 30)
             logger.error("Can't send messages to users,userList for vkNotification is empty!")
         }
+        return resultJson
     }
 }

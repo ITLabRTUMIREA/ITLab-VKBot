@@ -6,7 +6,6 @@ import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.database.DBUser
 import com.rtu.itlab.responses.*
 import com.rtu.itlab.responses.event.*
-import com.rtu.itlab.responses.event.models.EventInviteView
 import com.rtu.itlab.responses.event.models.EventView
 import com.rtu.itlab.utils.Config
 import io.ktor.application.*
@@ -23,7 +22,7 @@ import org.slf4j.LoggerFactory
 fun Application.main() {
     val logger = LoggerFactory.getLogger("com.rtu.itlab.Server")
 
-    val config = Config("application.conf").companion.config!!
+    val config = Config("application.conf").config!!
     var db = DBClient()
 
     if (!config.isEmpty) {
@@ -52,11 +51,11 @@ fun Application.main() {
 
                 "EventNew" -> {
                     logger.info("Request for new event.")
-                    EventNew(Gson().fromJson(tmp.get("data"), EventView::class.java), db).send()
+                    call.respond(EventNew(Gson().fromJson(tmp.get("data"), EventView::class.java), db).send())
                 }
 
                 "EventInvite" -> {
-                    EventInvite(Gson().fromJson(tmp, EventInviteView::class.java), db).send()
+                    EventInvite(Gson().fromJson(tmp, EventView::class.java), db).send()
                 }
 
                 "reloadConfig" -> {

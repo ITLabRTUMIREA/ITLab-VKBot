@@ -13,11 +13,12 @@ import com.rtu.itlab.responses.event.models.EventView
 class EventDenied(val eventView: EventView, db: DBClient) : ResponseHandler(db){
 
     //TODO: Specify how id will be received 2
-    override fun send() {
+    override fun send(): JsonObject{
         vk.messages()
                 .send(actor, userIds)
                 .message("Ваша заявка на участии на собитие «${eventView.title}»  отклонена!")
                 .execute()
+        return resultJson
     }
 
     fun send(userId: Int) {
