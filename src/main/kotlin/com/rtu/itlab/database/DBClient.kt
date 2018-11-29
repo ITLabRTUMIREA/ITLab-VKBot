@@ -70,7 +70,7 @@ class DBClient {
             syncCommands = connection!!.sync()
             logger.info("Connected to database.")
         } catch (ex: RedisConnectionException) {
-            logger.error(ex.message)
+            logger.error("${ex.message} (Database)")
         }
     }
 
@@ -80,7 +80,7 @@ class DBClient {
     fun reconnectToDatabaseWithOtherConfigProperties(): JsonObject {
         logger.error("Trying to reconnect to database")
         val result = JsonObject()
-        val config = Config.config!!
+        val config = Config().config!!
 
         connectToDatabase(
             config.getString("database.password"),
@@ -170,19 +170,18 @@ class DBClient {
                     when (syncCommands!!.hmset(userKey, mapAnyToMapString(map))) {
 
                         "OK" -> {
-                            logger.info("Person added!")
-                            makeDump()
+                            logger.info("Person ${map["firstName"]} $userKey added!")
                             resultJson.addProperty("statusCode", 1)
                         }
 
                         else -> {
-                            logger.error("Error adding person")
+                            logger.error("Error adding person ${map["firstName"]} $userKey")
                             resultJson.addProperty("statusCode", 11)
                         }
 
                     }
                 } else {
-                    logger.warn("Error adding person. Cant rewrite person!")
+                    logger.warn("Error adding person ${map["firstName"]} $userKey. Cant rewrite person!")
                     resultJson.addProperty("statusCode", 15)
                 }
 
@@ -376,7 +375,6 @@ class DBClient {
             else -> {
                 jsonResult.addProperty("statusCode", 1)
                 logger.info("Person deleted!")
-                makeDump()
             }
         }
 
@@ -424,6 +422,27 @@ class DBClient {
         return result
     }
 
+    /**
+     * Get a set of users vk ids who want to receive notifications by vk.
+     * @param invitedUsers List of invited Users
+     * @return set of VkIds
+     */
+    fun getUsersVkIdForVkMailing(invitedUsers: List<DBUser>): Set<Int> {
+        val result = mutableSetOf<Int>()
+
+        invitedUsers.forEach { dbUser ->
+            when (val vkId = syncCommands!!.hget(userTableKey + dbUser.id, "vkId")) {
+                null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
+                else -> {
+                    if (vkId.toInt() != 0)
+                        result.add(vkId.toInt())
+                }
+            }
+        }
+
+        return result
+    }
+
 
     /**
      * Get a set of users phones numbers who want to receive notifications by phone.
@@ -442,6 +461,25 @@ class DBClient {
 
         }
 
+        return result
+    }
+
+    /**
+     * Method for check user for availability in database
+     * @param vkId user vk id
+     */
+    fun isUserInDBByVkId(vkId: Int) : Boolean{
+
+        //TODO: OPTIMIZE CODE
+        var result = false
+        val keys = syncCommands!!.keys(usersKeyPattern)
+        for(key in keys){
+            val userVkId = syncCommands!!.hget(key, "vkId")
+            if (vkId == userVkId.toInt()) {
+                result = true
+                break
+            }
+        }
         return result
     }
 

@@ -16,7 +16,7 @@ import com.rtu.itlab.responses.event.models.targetParticipantsCount
 class EventExcluded(val eventView: EventView, db: DBClient) : ResponseHandler(db) {
 
     //TODO: Specify how id will be received 3
-    override fun send() {
+    override fun send(): JsonObject{
         vk.messages()
                 .send(actor, userIds)
                 .message("Вы были отстранены от участия в событии «${eventView.title}»" +
@@ -26,6 +26,7 @@ class EventExcluded(val eventView: EventView, db: DBClient) : ResponseHandler(db
                         "\nАдрес проведения мероприятия: ${eventView.address}" +
                         "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}")
                 .execute()
+        return resultJson
     }
 
     fun send(userId: Int) {
