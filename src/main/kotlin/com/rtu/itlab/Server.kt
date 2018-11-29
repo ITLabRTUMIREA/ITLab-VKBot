@@ -115,6 +115,10 @@ fun Application.main() {
                     call.respond(db.addPerson(tmp.getAsJsonObject("data")))
                 }
 
+                "isPersonInDb" ->{
+                    call.respondText(db.isUserInDBByVkId(tmp.get("VkId").asInt).toString())
+                }
+
                 "personUpdate" -> {
                     call.respond(db.updatePersonInfo(tmp.getAsJsonObject("data")))
                 }

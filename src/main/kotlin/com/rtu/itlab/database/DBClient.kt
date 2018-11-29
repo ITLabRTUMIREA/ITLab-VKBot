@@ -70,7 +70,7 @@ class DBClient {
             syncCommands = connection!!.sync()
             logger.info("Connected to database.")
         } catch (ex: RedisConnectionException) {
-            logger.error(ex.message)
+            logger.error("${ex.message} (Database)")
         }
     }
 
@@ -170,19 +170,18 @@ class DBClient {
                     when (syncCommands!!.hmset(userKey, mapAnyToMapString(map))) {
 
                         "OK" -> {
-                            logger.info("Person added!")
-                            makeDump()
+                            logger.info("Person ${map["firstName"]} $userKey added!")
                             resultJson.addProperty("statusCode", 1)
                         }
 
                         else -> {
-                            logger.error("Error adding person")
+                            logger.error("Error adding person ${map["firstName"]} $userKey")
                             resultJson.addProperty("statusCode", 11)
                         }
 
                     }
                 } else {
-                    logger.warn("Error adding person. Cant rewrite person!")
+                    logger.warn("Error adding person ${map["firstName"]} $userKey. Cant rewrite person!")
                     resultJson.addProperty("statusCode", 15)
                 }
 
@@ -376,7 +375,6 @@ class DBClient {
             else -> {
                 jsonResult.addProperty("statusCode", 1)
                 logger.info("Person deleted!")
-                makeDump()
             }
         }
 
