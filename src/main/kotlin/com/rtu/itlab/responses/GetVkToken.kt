@@ -13,8 +13,8 @@ class GetVkToken(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
     private val vkId = tmp!!.getAsJsonObject("object").get("from_id").asInt
     private val token: String = tmp!!.getAsJsonObject("object").get("text").asString
 
-    override fun send() :JsonObject{
-        if(!db!!.isUserInDBByVkId(vkId)) {
+    override fun send(): JsonObject {
+        if (!db!!.isUserInDBByVkId(vkId)) {
             if (token.startsWith("L:")) {
                 Fuel.post(config.getString("apiserver.host") + "/api/account/property/vk")
                     .body(Gson().toJson(UserCard(token.substringAfter("L:"), vkId)))
@@ -69,7 +69,20 @@ class GetVkToken(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                     )
                     .execute()
             }
-        }else{
+        } else {
+            if (token.startsWith("L:")) {
+                vk.messages()
+                    .send(actor)
+                    .userId(vkId)
+                    .message("Ранее вы уже были авторизованы!")
+                    .execute()
+            }else{
+                vk.messages()
+                    .send(actor)
+                    .userId(vkId)
+                    .message("Я не понимаю, что вы хотели мне сказать.")
+                    .execute()
+            }
             //TODO: DECLINE EMAIL VK PHONE
         }
         return resultJson

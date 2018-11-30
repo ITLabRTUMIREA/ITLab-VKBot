@@ -8,6 +8,7 @@ class Config {
     companion object {
         var pathToConfFile: String? = null
     }
+
     val companion = Companion
 
     var config: com.typesafe.config.Config? = null
@@ -21,7 +22,7 @@ class Config {
                 ConfigFactory.parseFile(file)
             }
         }
-        if (config != null || !config!!.isEmpty) {
+        if (config != null && !config!!.isEmpty) {
             logger.info("Config loaded!")
         } else {
             logger.error("Can't load config!")

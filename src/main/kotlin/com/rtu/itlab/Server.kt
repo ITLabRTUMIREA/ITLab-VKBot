@@ -116,7 +116,9 @@ fun Application.main() {
                 }
 
                 "isPersonInDb" ->{
-                    call.respondText(db.isUserInDBByVkId(tmp.get("VkId").asInt).toString())
+                    val result = JsonObject()
+                    result.addProperty("result",db.isUserInDBByVkId(tmp.get("VkId").asInt))
+                    call.respond(result)
                 }
 
                 "personUpdate" -> {
