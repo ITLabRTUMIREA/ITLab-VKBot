@@ -281,7 +281,7 @@ class DBClient {
 
             0L -> {
                 resultJson.addProperty("statusCode", 12)
-                println("Error updating person info")
+                logger.error("Error updating person info")
             }
 
             else -> {
@@ -291,7 +291,7 @@ class DBClient {
                     if (syncCommands!!.hget(userKey, k) != null)
                         syncCommands!!.hset(userKey, k, v)
                 }
-                println("Person info is updated!")
+                logger.info("Person info is updated!")
                 resultJson.addProperty("statusCode", 1)
             }
 
