@@ -27,6 +27,7 @@ class EventInvite(private val eventView: EventView, db: DBClient?) : ResponseHan
     }
 
     fun send(invitedUsers: Set<Int>) {
+        println(invitedUsers.toList())
         if (!userIds!!.isEmpty()) {
 
 //            val invitedUserIds = when (db) {

@@ -27,6 +27,7 @@ class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler
             }
 
             val userIdsWithoutInvite: List<Int>
+
             if (!invitedUserIds.isNullOrEmpty()) {
                 userIdsWithoutInvite = userIds.subtract(invitedUserIds).toList()
                 EventInvite(eventView, db).send(invitedUserIds)
