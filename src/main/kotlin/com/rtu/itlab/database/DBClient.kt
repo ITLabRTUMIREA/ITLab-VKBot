@@ -50,7 +50,15 @@ class DBClient {
         connectToDatabase(password, ip, port)
     }
 
-    constructor()
+    constructor() {
+        val config = Config().config!!
+        if (config != null && !config.isEmpty) {
+            connectToDatabase(
+                config.getString("database.password"),
+                config.getString("database.url"), config.getInt("database.port")
+            )
+        }
+    }
 
     private var redisClient: RedisClient? = null
     private var connection: StatefulRedisConnection<String, String>? = null
@@ -61,6 +69,10 @@ class DBClient {
      */
     fun isConnected(): Boolean {
         return connection != null && connection!!.isOpen
+    }
+
+    fun closeConnection() {
+        connection!!.close()
     }
 
     private fun connectToDatabase(password: String, ip: String, port: Int) {
@@ -74,29 +86,6 @@ class DBClient {
         }
     }
 
-    /**
-     * Test on connection to database and reconnect if necessary
-     */
-    fun reconnectToDatabaseWithOtherConfigProperties(): JsonObject {
-        logger.error("Trying to reconnect to database")
-        val result = JsonObject()
-        val config = Config().config!!
-
-        connectToDatabase(
-            config.getString("database.password"),
-            config.getString("database.url"),
-            config.getInt("database.port")
-        )
-
-        if (isConnected()) {
-            //logger.info("Connected to database")
-            result.addProperty("statusCode", 1)
-        } else {
-            result.addProperty("statusCode", 16)
-        }
-
-        return result
-    }
 
     /**
      * Method for adding person info to database
@@ -187,32 +176,11 @@ class DBClient {
 
             } catch (ex: io.lettuce.core.RedisCommandExecutionException) {
                 logger.error(ex.message)
-                if (ex.message.equals("NOAUTH Authentication required")) {
-                    if (reconnected) {
-                        reconnected = false
-                        reconnectToDatabaseWithOtherConfigProperties()
-                        resultJson = addPerson(userKey, map)
-
-                    } else {
-                        reconnected = true
-                        resultJson.addProperty("statusCode", 17)
-                    }
-                } else {
-                    logger.error("Connection to database was lost")
-                    resultJson.addProperty("statusCode", 17)
-                }
+                resultJson.addProperty("statusCode", 17)
             }
 
         } else {
-
-            if (reconnectToDatabaseWithOtherConfigProperties().get("statusCode").asInt == 1 && reconnected) {
-                reconnected = false
-                resultJson = addPerson(userKey, map)
-                reconnected = true
-            } else {
-                logger.error("Not connected to database")
-                resultJson.addProperty("statusCode", 16)
-            }
+            resultJson.addProperty("statusCode", 16)
         }
         return resultJson
 
@@ -308,12 +276,6 @@ class DBClient {
         val resultJson = JsonObject()
         resultJson.addProperty("statusCode", 1)
         logger.info("All persons deleted")
-//        val keys = syncCommands!!.keys(keyPattern)
-//        for (key in keys) {
-//            val jsonObject = JsonObject()
-//            jsonObject.addProperty(KEY, key)
-//            deletePerson(jsonObject)
-//        }
         return resultJson
     }
 
@@ -468,12 +430,12 @@ class DBClient {
      * Method for check user for availability in database
      * @param vkId user vk id
      */
-    fun isUserInDBByVkId(vkId: Int) : Boolean{
+    fun isUserInDBByVkId(vkId: Int): Boolean {
 
         //TODO: OPTIMIZE CODE
         var result = false
         val keys = syncCommands!!.keys(usersKeyPattern)
-        for(key in keys){
+        for (key in keys) {
             val userVkId = syncCommands!!.hget(key, "vkId")
             if (vkId == userVkId.toInt()) {
                 result = true

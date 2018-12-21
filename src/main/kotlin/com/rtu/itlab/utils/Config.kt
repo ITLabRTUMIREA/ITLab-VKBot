@@ -12,9 +12,9 @@ class Config {
     val companion = Companion
 
     var config: com.typesafe.config.Config? = null
-    val logger = LoggerFactory.getLogger("com.rtu.itlab.utils.Config")
+    private val logger = LoggerFactory.getLogger("com.rtu.itlab.utils.Config")
 
-    fun loadConfig() {
+    private fun loadConfig() {
         config = when (pathToConfFile) {
             null -> ConfigFactory.load()
             else -> {
