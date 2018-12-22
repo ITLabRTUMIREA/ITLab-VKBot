@@ -1,6 +1,8 @@
 package com.rtu.itlab.responses
 
+import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.google.gson.reflect.TypeToken
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.utils.Config
 import com.vk.api.sdk.client.VkApiClient
@@ -30,7 +32,7 @@ abstract class ResponseHandler(val db: DBClient? = null) {
 
     val userIds = when (db) {
         null -> null
-        else -> db.getUsersVkIdForVkMailing().toList()
+        else -> mutableListOf<Int>(Gson().fromJson(db.getUsersVkIdForVkMailing().getAsJsonArray("vkIDs"), object : TypeToken<List<Int>>(){}.type))
     }
 
     abstract fun send(): JsonObject
