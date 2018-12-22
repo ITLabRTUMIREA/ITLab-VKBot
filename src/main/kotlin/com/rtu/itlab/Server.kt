@@ -17,12 +17,14 @@ import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
 import org.slf4j.LoggerFactory
+import kotlin.concurrent.timer
 
+private lateinit var db: DBClient
+private val logger = LoggerFactory.getLogger("com.rtu.itlab.Server")
 
 fun Application.main() {
-    val logger = LoggerFactory.getLogger("com.rtu.itlab.Server")
-
     val config = Config("application.conf").config!!
+    db = DBClient()
 
     install(ContentNegotiation) {
         gson {
@@ -32,8 +34,7 @@ fun Application.main() {
     }
 
     routing {
-        val db = DBClient()
-        get("/") { call.respondText { "It's OK" } }
+        get("/") { call.respondText { "It's NOT OK" } }
 
         post("/bot") {
             val tmp: JsonObject? =
@@ -101,7 +102,7 @@ fun Application.main() {
                 "disconnect" -> {
                     db.closeConnection()
                     val result = JsonObject()
-                    result.addProperty("statusCode",1)
+                    result.addProperty("statusCode", 1)
                     logger.info("Disconnecting from database")
                     call.respond(result)
                 }
@@ -129,10 +130,8 @@ fun Application.main() {
             }
         }
 
-        get("bot/db/persons/ispersonindbbyvkid/{vkid}"){
-            val result = JsonObject()
-            result.addProperty("result", db.isUserInDBByVkId(call.parameters["vkid"]!!.toInt()))
-            call.respond(result)
+        get("bot/db/persons/ispersonindbbyvkid/{vkid}") {
+            call.respond(db.isUserInDBByVkId(call.parameters["vkid"]!!.toInt()))
         }
 
         get("/bot/db/persons/get") {
@@ -155,6 +154,10 @@ fun Application.main() {
             call.respond(db.getUserInfoByKey(call.parameters["id"]))
         }
 
+        get("/bot/db/dump") {
+            call.respond(db.makeDump())
+        }
+
         delete("/bot/db/person/delete/{id}") {
             call.respond(db.deletePerson(call.parameters["id"]))
         }
@@ -168,6 +171,6 @@ fun Application.main() {
             result.addProperty("connection", db.isConnected())
             call.respond(result)
         }
-        db.closeConnection()
+
     }
 }

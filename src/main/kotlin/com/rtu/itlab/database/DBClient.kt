@@ -9,10 +9,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.rtu.itlab.utils.mapAnyToMapString
 import com.google.gson.JsonObject
 import com.rtu.itlab.utils.Config
-import com.typesafe.config.ConfigFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.File
+import com.google.gson.JsonArray
+import com.google.gson.reflect.TypeToken
+import kotlin.concurrent.timer
+
+/**
+ * Time To Live constant
+ */
+const val TTL = 600000L
 
 /**
  * Status code:
@@ -25,14 +31,10 @@ import java.io.File
  * 15 - cant rewrite (some) person(s)
  * 16 - cant connect to database
  * 17 - error work with database
+ * 18 - error connecting to database(reconnecting)
  */
 
-/**
- * Connecting to redis database server
- * @param password - password uses for auth in redis server database
- * @param ip database server address
- * @param port database port address
- */
+
 class DBClient {
 
     private val logger: Logger = LoggerFactory.getLogger("com.rtu.itlab.database.DBClient")
@@ -46,16 +48,31 @@ class DBClient {
 
     private val phoneNumberPattern = "\\+7[0-9]{10}"
 
+    /**
+     * Connecting to redis database server
+     * @param password - password uses for auth in redis server database
+     * @param ip database server address
+     * @param port database port address
+     */
     constructor(password: String, ip: String, port: Int) {
         connectToDatabase(password, ip, port)
     }
 
+    /**
+     * Connecting to redis database server using info for connection from config
+     */
     constructor() {
+        loadConfigAndConnect()
+    }
+
+    private fun loadConfigAndConnect() {
         val config = Config().config!!
         if (config != null && !config.isEmpty) {
+            logger.info("Connecting to database")
             connectToDatabase(
                 config.getString("database.password"),
-                config.getString("database.url"), config.getInt("database.port")
+                config.getString("database.url"),
+                config.getInt("database.port")
             )
         }
     }
@@ -71,21 +88,35 @@ class DBClient {
         return connection != null && connection!!.isOpen
     }
 
+    /**
+     * Disconnecting from database
+     */
     fun closeConnection() {
-        connection!!.close()
+        if (connection != null)
+            connection!!.close()
+    }
+
+    private fun timerDatabaseConnection() {
+        timer("databaseConnectionTimer", initialDelay = TTL, period = 1L) {
+            closeConnection()
+            logger.info("Connection refused (Timeout TTL = $TTL)")
+            this.cancel()
+        }
     }
 
     private fun connectToDatabase(password: String, ip: String, port: Int) {
         try {
             redisClient = RedisClient.create("redis://$password@$ip:$port/0")
             connection = redisClient!!.connect()
+
             syncCommands = connection!!.sync()
             logger.info("Connected to database.")
+            timerDatabaseConnection()
+
         } catch (ex: RedisConnectionException) {
             logger.error("${ex.message} (Database)")
         }
     }
-
 
     /**
      * Method for adding person info to database
@@ -116,6 +147,7 @@ class DBClient {
      * @return number after adjustment
      */
     private fun numberAdjustment(phoneNumber: String?): String {
+        //TODO: numAdj
         var newNumber = ""
         if (!phoneNumber.isNullOrEmpty())
             newNumber = when (phoneNumber.matches(Regex(phoneNumberPattern))) {
@@ -144,7 +176,6 @@ class DBClient {
         return addPerson(userKey, map)
     }
 
-    private var reconnected = true
 
     /**
      * Adding person to database with key: userKey and hashes: map
@@ -153,6 +184,9 @@ class DBClient {
      */
     private fun addPerson(userKey: String, map: HashMap<String, Any?>): JsonObject {
         var resultJson = JsonObject()
+
+        if (!isConnected()) loadConfigAndConnect()
+
         if (isConnected()) {
             try {
                 if (syncCommands!!.exists(userKey) == 0L) {
@@ -180,18 +214,29 @@ class DBClient {
             }
 
         } else {
-            resultJson.addProperty("statusCode", 16)
+            resultJson.addProperty("statusCode", 18)
         }
-        return resultJson
 
+        return resultJson
     }
 
     /**
      * Making dump file
      */
-    fun makeDump() {
-        syncCommands!!.save()
-        println("Dump file was created/updated!")
+    fun makeDump(): JsonObject {
+        val jsonResult = JsonObject()
+
+        if (!isConnected()) loadConfigAndConnect()
+
+        if (isConnected()) {
+            syncCommands!!.save()
+            logger.info("Dump file was created/updated!")
+            jsonResult.addProperty("statusCode", 1)
+        } else {
+            logger.error("Error dump file(Cant connect to database)")
+            jsonResult.addProperty("statusCode", 18)
+        }
+        return jsonResult
     }
 
     /**
@@ -200,31 +245,39 @@ class DBClient {
      * @return Json with person info
      */
     fun getUserInfoByKey(key: String?): JsonObject {
-        val userKey = when (key!!.startsWith(userTableKey)) {
-            true -> key
-            else -> userTableKey + key
-        }
-
-        val resultMap = syncCommands!!.hgetall(userKey)
+        if (!isConnected()) loadConfigAndConnect()
         val resultJson = JsonObject()
 
-        when (resultMap.isNullOrEmpty()) {
+        if (isConnected()) {
 
-            false -> {
-                resultMap[userJsonKey] = userKey.removePrefix(userTableKey)
-                resultJson.add("data", JsonParser().parse(Gson().toJson(resultMap)))
-                logger.info("User information received")
-                resultJson.addProperty("statusCode", 1)
+            val userKey = when (key!!.startsWith(userTableKey)) {
+                true -> key
+                else -> userTableKey + key
             }
 
-            true -> {
-                logger.error("Can't get user info")
-                resultJson.addProperty("statusCode", 10)
+            val resultMap = when (isConnected()) {
+                true -> syncCommands!!.hgetall(userKey)
+                else -> mutableMapOf()
             }
 
+            when (resultMap.isNullOrEmpty()) {
+
+                false -> {
+                    resultMap[userJsonKey] = userKey.removePrefix(userTableKey)
+                    resultJson.add("data", JsonParser().parse(Gson().toJson(resultMap)))
+                    logger.info("User information received")
+                    resultJson.addProperty("statusCode", 1)
+                }
+
+                true -> {
+                    logger.error("Can't get user info")
+                    resultJson.addProperty("statusCode", 10)
+                }
+
+            }
+        } else {
+            resultJson.addProperty("statusCode", 18)
         }
-
-        //resultMap.put(KEY, person.get(KEY).asString) //old working version
 
         return resultJson
     }
@@ -236,33 +289,41 @@ class DBClient {
      */
     fun updatePersonInfo(person: JsonObject): JsonObject {
         val key = person.get(userJsonKey).asString
-
-        val userKey = when (key!!.startsWith(userTableKey)) {
-            true -> key
-            else -> userTableKey + key
-        }
-
-        person.remove(userJsonKey)
-
         val resultJson = JsonObject()
-        when (syncCommands!!.exists(userKey)) {
 
-            0L -> {
-                resultJson.addProperty("statusCode", 12)
-                logger.error("Error updating person info")
+        if (!isConnected()) loadConfigAndConnect()
+
+        if (isConnected()) {
+            val userKey = when (key!!.startsWith(userTableKey)) {
+                true -> key
+                else -> userTableKey + key
             }
 
-            else -> {
-                val mapOfNewValues: Map<String, String> = Gson().fromJson(person, HashMap<String, String>().javaClass)
+            person.remove(userJsonKey)
 
-                mapOfNewValues.forEach { k, v ->
-                    if (syncCommands!!.hget(userKey, k) != null)
-                        syncCommands!!.hset(userKey, k, v)
+            when (syncCommands!!.exists(userKey)) {
+
+                0L -> {
+                    resultJson.addProperty("statusCode", 12)
+                    logger.error("Error updating person info")
                 }
-                logger.info("Person info is updated!")
-                resultJson.addProperty("statusCode", 1)
+
+                else -> {
+                    val mapOfNewValues: Map<String, String> =
+                        Gson().fromJson(person, HashMap<String, String>().javaClass)
+
+                    mapOfNewValues.forEach { k, v ->
+                        if (syncCommands!!.hget(userKey, k) != null)
+                            syncCommands!!.hset(userKey, k, v)
+                    }
+                    logger.info("Person info is updated!")
+                    resultJson.addProperty("statusCode", 1)
+                }
+
             }
 
+        } else {
+            resultJson.addProperty("statusCode", 18)
         }
 
         return resultJson
@@ -272,10 +333,15 @@ class DBClient {
      * Deleting all persons from database
      */
     fun deleteAllPersons(): JsonObject {
-        syncCommands!!.flushall() //TODO : TEST COMMAND
+        if (!isConnected()) loadConfigAndConnect()
         val resultJson = JsonObject()
-        resultJson.addProperty("statusCode", 1)
-        logger.info("All persons deleted")
+        if (isConnected()) {
+            syncCommands!!.flushall() //TODO : TEST COMMAND
+            resultJson.addProperty("statusCode", 1)
+            logger.info("All persons deleted")
+        } else {
+            resultJson.addProperty("statusCode", 18)
+        }
         return resultJson
     }
 
@@ -284,35 +350,48 @@ class DBClient {
      * @return Json with persons info
      */
     fun getAllPersons(): JsonObject {
-        val resultJson = JsonObject()
-
-        val keys = syncCommands!!.keys(usersKeyPattern)
+        if (!isConnected()) loadConfigAndConnect()
 
         var wasErrors = false
-
-        val persons = JsonArray()
-
-        keys.forEach { key ->
-            val userInfo = getUserInfoByKey(key)
-            when (userInfo.get("statusCode").asInt) {
-                1 -> {
-                    persons.add(userInfo.get("data"))
-                }
-                else -> {
-                    wasErrors = true
-                }
+        val resultJson = JsonObject()
+        if (isConnected()) {
+            var keys: List<String> = mutableListOf()
+            try {
+                keys = syncCommands!!.keys(usersKeyPattern)
+            } catch (ex: RedisException) {
+                wasErrors = true
+                logger.error(ex.message + " REDIS ERROR")
+            } catch (e: NullPointerException) {
+                wasErrors = true
+                logger.error(e.message + " NULL POINTER EXCEPTION")
             }
 
-        }
+            val persons = JsonArray()
 
-        resultJson.add("data", persons)
+            keys.forEach { key ->
+                val userInfo = getUserInfoByKey(key)
+                when (userInfo.get("statusCode").asInt) {
+                    1 -> {
+                        persons.add(userInfo.get("data"))
+                    }
+                    else -> {
+                        wasErrors = true
+                    }
+                }
 
-        if (wasErrors) {
-            logger.info("Persons got with some errors")
-            resultJson.addProperty("statusCode", 13)
+            }
+
+            resultJson.add("data", persons)
+
+            if (wasErrors) {
+                logger.info("Persons got with some errors")
+                resultJson.addProperty("statusCode", 13)
+            } else {
+                logger.info("Persons got!")
+                resultJson.addProperty("statusCode", 1)
+            }
         } else {
-            logger.info("Persons got!")
-            resultJson.addProperty("statusCode", 1)
+            resultJson.addProperty("statusCode", 18)
         }
         return resultJson
     }
@@ -322,127 +401,196 @@ class DBClient {
      * @param id person id
      */
     fun deletePerson(id: String?): JsonObject {
+        if (!isConnected()) loadConfigAndConnect()
+        val resultJson = JsonObject()
+        if (isConnected()) {
+            val userKey = when (id!!.startsWith(userTableKey)) {
+                true -> id
+                else -> userTableKey + id
+            }
 
-        val userKey = when (id!!.startsWith(userTableKey)) {
-            true -> id
-            else -> userTableKey + id
+
+            when (syncCommands!!.del(userKey)) {
+                0L -> {
+                    resultJson.addProperty("statusCode", 10)
+                    logger.info("Person not deleted!")
+                }
+                else -> {
+                    resultJson.addProperty("statusCode", 1)
+                    logger.info("Person deleted!")
+                }
+            }
+        } else {
+            resultJson.addProperty("statusCode", 18)
         }
 
-        val jsonResult = JsonObject()
-        when (syncCommands!!.del(userKey)) {
-            0L -> {
-                jsonResult.addProperty("statusCode", 10)
-                logger.info("Person not deleted!")
-            }
-            else -> {
-                jsonResult.addProperty("statusCode", 1)
-                logger.info("Person deleted!")
-            }
-        }
-
-        return jsonResult
+        return resultJson
     }
 
     /**
      * Get a set of users mails who want to receive notifications by mail.
      * @return set of emails
      */
-    fun getUsersMailsForEmailMailing(): Set<String> {
+    fun getUsersMailsForEmailMailing(): JsonObject {
+        val jsonResult = JsonObject()
         val result = mutableSetOf<String>()
-        val keys = syncCommands!!.keys(usersKeyPattern)
-        keys.forEach { key ->
-            val email = syncCommands!!.hget(key, "email")
-            val emailNotice = syncCommands!!.hget(key, "emailNotice")!!.toBoolean()
 
-            if (emailNotice && !email.isNullOrBlank())
-                result.add(email)
+        if (!isConnected()) loadConfigAndConnect()
 
+        if (isConnected()) {
+
+            var keys = mutableListOf<String>()
+
+            jsonResult.addProperty("statusCode", 1)
+            keys = syncCommands!!.keys(usersKeyPattern)
+
+            keys.forEach { key ->
+                val email = syncCommands!!.hget(key, "email")
+                val emailNotice = syncCommands!!.hget(key, "emailNotice")!!.toBoolean()
+
+                if (emailNotice && !email.isNullOrBlank())
+                    result.add(email)
+            }
+
+        } else {
+            jsonResult.addProperty("statusCode", 18)
         }
-        return result
+
+        val element = Gson().toJsonTree(result, object : TypeToken<MutableSet<String>>() {}.type)
+        jsonResult.add("emails", element.asJsonArray)
+
+        return jsonResult
     }
 
     /**
      * Get a set of users vk ids who want to receive notifications by vk.
-     * @return set of VkIds
+     * @return result jsonObject
      */
-    fun getUsersVkIdForVkMailing(): Set<Int> {
+    fun getUsersVkIdForVkMailing(): JsonObject {
+        val jsonResult = JsonObject()
         val result = mutableSetOf<Int>()
-        val keys = when (isConnected()) {
-            true -> syncCommands!!.keys(usersKeyPattern)
-            else -> mutableListOf()
+        if (!isConnected()) loadConfigAndConnect()
+
+        if (isConnected()) {
+
+            var keys: List<String> = mutableListOf()
+            jsonResult.addProperty("statusCode", 1)
+            keys = when (isConnected()) {
+                true -> syncCommands!!.keys(usersKeyPattern)
+                else -> mutableListOf()
+            }
+
+
+            keys.forEach { key ->
+                val vkId = syncCommands!!.hget(key, "vkId")
+                val vkNotice = syncCommands!!.hget(key, "vkNotice")!!.toBoolean()
+
+                if (vkNotice && !vkId.isNullOrBlank())
+                    result.add(vkId.toInt())
+
+            }
+        } else {
+            jsonResult.addProperty("statusCode", 18)
         }
 
-        keys.forEach { key ->
-            val vkId = syncCommands!!.hget(key, "vkId")
-            val vkNotice = syncCommands!!.hget(key, "vkNotice")!!.toBoolean()
+        val element = Gson().toJsonTree(result, object : TypeToken<MutableSet<Int>>() {}.type)
+        jsonResult.add("vkIDs", element.asJsonArray)
 
-            if (vkNotice && !vkId.isNullOrBlank())
-                result.add(vkId.toInt())
-
-        }
-
-        return result
+        return jsonResult
     }
 
     /**
      * Get a set of users vk ids who want to receive notifications by vk.
      * @param invitedUsers List of invited Users
-     * @return set of VkIds
+     * @return result jsonObject
      */
-    fun getUsersVkIdForVkMailing(invitedUsers: List<DBUser>): Set<Int> {
+    fun getUsersVkIdForVkMailing(invitedUsers: List<DBUser>): JsonObject {
+        val jsonResult = JsonObject()
         val result = mutableSetOf<Int>()
+        if (!isConnected()) loadConfigAndConnect()
 
-        invitedUsers.forEach { dbUser ->
-            when (val vkId = syncCommands!!.hget(userTableKey + dbUser.id, "vkId")) {
-                null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
-                else -> {
-                    if (vkId.toInt() != 0)
-                        result.add(vkId.toInt())
+        if (isConnected()) {
+            jsonResult.addProperty("statusCode", 1)
+            invitedUsers.forEach { dbUser ->
+                when (val vkId = syncCommands!!.hget(userTableKey + dbUser.id, "vkId")) {
+                    null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
+                    else -> {
+                        if (vkId.toInt() != 0)
+                            result.add(vkId.toInt())
+                    }
                 }
             }
+
+        } else {
+            jsonResult.addProperty("statusCode", 18)
         }
 
-        return result
+        val element = Gson().toJsonTree(result, object : TypeToken<MutableSet<Int>>() {}.type)
+        jsonResult.add("vkIDs", element.asJsonArray)
+
+        return jsonResult
     }
 
 
     /**
      * Get a set of users phones numbers who want to receive notifications by phone.
-     * @return set of phones
+     * @return result jsonObject
      */
-    fun getUsersPhonesForPhoneMailing(): Set<String> {
+    fun getUsersPhonesForPhoneMailing(): JsonObject {
+        val jsonResult = JsonObject()
         val result = mutableSetOf<String>()
-        val keys = syncCommands!!.keys(usersKeyPattern)
+        var keys: List<String> = mutableListOf()
+        if (!isConnected()) loadConfigAndConnect()
 
-        keys.forEach { key ->
-            val phoneNumber = syncCommands!!.hget(key, "phoneNumber")
-            val phoneNotice = syncCommands!!.hget(key, "phoneNotice")!!.toBoolean()
+        if (isConnected()) {
+            keys = syncCommands!!.keys(usersKeyPattern)
+            jsonResult.addProperty("statusCode", 1)
 
-            if (phoneNotice && !phoneNumber.isNullOrBlank())
-                result.add(phoneNumber)
+            keys.forEach { key ->
+                val phoneNumber = syncCommands!!.hget(key, "phoneNumber")
+                val phoneNotice = syncCommands!!.hget(key, "phoneNotice")!!.toBoolean()
 
+                if (phoneNotice && !phoneNumber.isNullOrBlank())
+                    result.add(phoneNumber)
+            }
+
+        } else {
+            jsonResult.addProperty("statusCode", 18)
         }
 
-        return result
+        val element = Gson().toJsonTree(result, object : TypeToken<MutableSet<String>>() {}.type)
+        jsonResult.add("phones", element.asJsonArray)
+
+        return jsonResult
     }
 
     /**
      * Method for check user for availability in database
      * @param vkId user vk id
      */
-    fun isUserInDBByVkId(vkId: Int): Boolean {
-
+    fun isUserInDBByVkId(vkId: Int): JsonObject {
         //TODO: OPTIMIZE CODE
-        var result = false
-        val keys = syncCommands!!.keys(usersKeyPattern)
-        for (key in keys) {
-            val userVkId = syncCommands!!.hget(key, "vkId")
-            if (vkId == userVkId.toInt()) {
-                result = true
-                break
+
+        val jsonResult = JsonObject()
+        if (!isConnected()) loadConfigAndConnect()
+        if (isConnected()) {
+            var result = false
+            val keys = syncCommands!!.keys(usersKeyPattern)
+            for (key in keys) {
+                val userVkId = syncCommands!!.hget(key, "vkId")
+                if (vkId == userVkId.toInt()) {
+                    jsonResult.addProperty("id",key.removePrefix(userTableKey))
+                    result = true
+                    break
+                }
             }
+            jsonResult.addProperty("statusCode", 1)
+            jsonResult.addProperty("result", result)
+        } else {
+            jsonResult.addProperty("statusCode", 18)
         }
-        return result
+
+        return jsonResult
     }
 
     /**
@@ -464,7 +612,7 @@ class DBClient {
 
         persons.forEach {
             when (addPerson(it.copy(vkNotice = true, emailNotice = true, phoneNotice = true)).get("statusCode").asInt) {
-                11 -> {
+                11,18,16 -> {
                     wasErrors = true
                 }
                 15 -> {

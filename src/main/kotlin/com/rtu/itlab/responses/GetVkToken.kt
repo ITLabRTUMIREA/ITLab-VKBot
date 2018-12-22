@@ -28,7 +28,7 @@ class GetVkToken(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
 
     override fun send(): JsonObject {
         var message = "Nothing..."
-        if (!db!!.isUserInDBByVkId(vkId)) {
+        if (!db!!.isUserInDBByVkId(vkId).get("result").asBoolean) {
             if (token.startsWith("L:")) {
                 Fuel.post(config.getString("apiserver.host") + "/api/account/property/vk")
                     .body(Gson().toJson(UserCard(token.substringAfter("L:"), vkId)))
