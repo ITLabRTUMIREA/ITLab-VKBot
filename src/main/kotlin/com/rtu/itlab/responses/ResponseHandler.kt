@@ -2,6 +2,7 @@ package com.rtu.itlab.responses
 
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
+import com.rtu.itlab.utils.Config
 import com.vk.api.sdk.client.VkApiClient
 import com.vk.api.sdk.client.actors.GroupActor
 import com.vk.api.sdk.httpclient.HttpTransportClient
@@ -22,7 +23,8 @@ abstract class ResponseHandler(val db: DBClient? = null) {
      */
     val resultJson = JsonObject()
 
-    val config = com.rtu.itlab.utils.Config().config!!
+    val config = Config().config!!
+
 
     val actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
 

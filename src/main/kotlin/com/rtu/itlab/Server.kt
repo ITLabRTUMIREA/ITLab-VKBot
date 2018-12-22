@@ -23,15 +23,6 @@ fun Application.main() {
     val logger = LoggerFactory.getLogger("com.rtu.itlab.Server")
 
     val config = Config("application.conf").config!!
-    var db = DBClient()
-
-    if (!config.isEmpty) {
-        db = DBClient(
-            config.getString("database.password"),
-            config.getString("database.url"),
-            config.getInt("database.port")
-        )
-    }
 
     install(ContentNegotiation) {
         gson {
@@ -41,6 +32,7 @@ fun Application.main() {
     }
 
     routing {
+        val db = DBClient()
         get("/") { call.respondText { "It's OK" } }
 
         post("/bot") {
@@ -57,11 +49,6 @@ fun Application.main() {
                 "EventInvite" -> {
                     EventInvite(Gson().fromJson(tmp, EventView::class.java), db).send()
                 }
-
-                "reloadConfig" -> {
-
-                }
-
 
                 "EquipmentAdded" -> {
                     EquipmentAdded(tmp).send()
@@ -111,14 +98,16 @@ fun Application.main() {
 
             when (tmp!!.get("type").asString) {
 
-                "addPerson" -> {
-                    call.respond(db.addPerson(tmp.getAsJsonObject("data")))
+                "disconnect" -> {
+                    db.closeConnection()
+                    val result = JsonObject()
+                    result.addProperty("statusCode",1)
+                    logger.info("Disconnecting from database")
+                    call.respond(result)
                 }
 
-                "isPersonInDb" ->{
-                    val result = JsonObject()
-                    result.addProperty("result",db.isUserInDBByVkId(tmp.get("VkId").asInt))
-                    call.respond(result)
+                "addPerson" -> {
+                    call.respond(db.addPerson(tmp.getAsJsonObject("data")))
                 }
 
                 "personUpdate" -> {
@@ -138,6 +127,12 @@ fun Application.main() {
                 }
 
             }
+        }
+
+        get("bot/db/persons/ispersonindbbyvkid/{vkid}"){
+            val result = JsonObject()
+            result.addProperty("result", db.isUserInDBByVkId(call.parameters["vkid"]!!.toInt()))
+            call.respond(result)
         }
 
         get("/bot/db/persons/get") {
@@ -168,5 +163,11 @@ fun Application.main() {
             call.respond(db.deleteAllPersons())
         }
 
+        get("/bot/db/isconnected") {
+            val result = JsonObject()
+            result.addProperty("connection", db.isConnected())
+            call.respond(result)
+        }
+        db.closeConnection()
     }
 }

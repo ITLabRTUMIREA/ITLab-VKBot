@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
  */
 class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler(db) {
 
-    val logger = LoggerFactory.getLogger("com.rtu.itlab.responses.event.EventNew")
+    private val logger = LoggerFactory.getLogger("com.rtu.itlab.responses.event.EventNew")
 
     override fun send(): JsonObject {
 
