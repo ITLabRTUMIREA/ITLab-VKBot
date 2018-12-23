@@ -166,6 +166,10 @@ fun Application.main() {
             call.respond(db.deleteAllPersons())
         }
 
+        get("/bot/db/connect") {
+            call.respond(db.loadConfigAndConnect())
+        }
+
         get("/bot/db/isconnected") {
             val result = JsonObject()
             result.addProperty("connection", db.isConnected())

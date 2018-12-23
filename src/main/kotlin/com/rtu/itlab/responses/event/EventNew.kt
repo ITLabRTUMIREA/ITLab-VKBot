@@ -1,8 +1,6 @@
 package com.rtu.itlab.responses.event
 
-import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.google.gson.reflect.TypeToken
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.ResponseHandler
 import com.rtu.itlab.responses.event.models.*
@@ -25,15 +23,14 @@ class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler
 
             val invitedUserIds = when (db) {
                 null -> null
-                else -> mutableSetOf<Int>(Gson().fromJson(db.getUsersVkIdForVkMailing(eventView.invited()).
-                    getAsJsonArray("vkIDs"), object : TypeToken<Set<Int>>(){}.type))
+                else -> db.getUsersVkIdForVkMailing(eventView.invited()).getAsJsonArray("vkIDs").map { it.asInt }
             }
 
             val userIdsWithoutInvite: List<Int>
 
             if (!invitedUserIds.isNullOrEmpty()) {
                 userIdsWithoutInvite = userIds.subtract(invitedUserIds).toList()
-                EventInvite(eventView, db).send(invitedUserIds)
+                EventInvite(eventView, db).send(invitedUserIds.toMutableSet())
             } else {
                 userIdsWithoutInvite = userIds.toList()
             }
