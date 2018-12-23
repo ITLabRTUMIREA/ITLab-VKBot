@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
  * @param db - Database with persons info
  */
 class EventInvite(private val eventView: EventView, db: DBClient?) : ResponseHandler(db) {
-    val logger = LoggerFactory.getLogger("com.rtu.itlab.responses.event.EventInvite")
+    private val logger = LoggerFactory.getLogger("com.rtu.itlab.responses.event.EventInvite")
     override fun send(): JsonObject {
 //        vk.messages()
 //            .send(actor, userIds)
@@ -27,7 +27,6 @@ class EventInvite(private val eventView: EventView, db: DBClient?) : ResponseHan
     }
 
     fun send(invitedUsers: Set<Int>) {
-        println(invitedUsers.toList())
         if (!userIds!!.isEmpty()) {
 
 //            val invitedUserIds = when (db) {

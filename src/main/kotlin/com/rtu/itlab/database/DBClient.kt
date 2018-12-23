@@ -4,7 +4,6 @@ import com.google.gson.*
 import io.lettuce.core.*
 import io.lettuce.core.api.sync.RedisCommands
 import io.lettuce.core.api.StatefulRedisConnection
-import java.util.HashMap
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.rtu.itlab.utils.mapAnyToMapString
 import com.google.gson.JsonObject
@@ -13,12 +12,15 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import com.google.gson.JsonArray
 import com.google.gson.reflect.TypeToken
+import java.time.Duration
+import java.util.*
 import kotlin.concurrent.timer
 
 /**
  * Time To Live constant
  */
 const val TTL = 600000L
+const val ANSWERTIMEOUT = 10000L
 
 /**
  * Status code:
@@ -32,6 +34,7 @@ const val TTL = 600000L
  * 16 - cant connect to database
  * 17 - error work with database
  * 18 - error connecting to database(reconnecting)
+ * 50 - error loading config
  */
 
 
@@ -45,8 +48,6 @@ class DBClient {
 
     private val usersKeyPattern = userTableKey + "[0-9a-z]*-[0-9a-z]*-" +
             "[0-9a-z]*-[0-9a-z]*-[0-9a-z]*"
-
-    private val phoneNumberPattern = "\\+7[0-9]{10}"
 
     /**
      * Connecting to redis database server
@@ -65,16 +66,22 @@ class DBClient {
         loadConfigAndConnect()
     }
 
-    private fun loadConfigAndConnect() {
-        val config = Config().config!!
+    fun loadConfigAndConnect(): JsonObject {
+        val config = Config().config
+        var jsonResult = JsonObject()
         if (config != null && !config.isEmpty) {
             logger.info("Connecting to database")
-            connectToDatabase(
+            jsonResult = connectToDatabase(
                 config.getString("database.password"),
                 config.getString("database.url"),
                 config.getInt("database.port")
             )
+        } else {
+            jsonResult.addProperty("statusCode", 50)
+
         }
+
+        return jsonResult
     }
 
     private var redisClient: RedisClient? = null
@@ -85,37 +92,57 @@ class DBClient {
      * test Connection to database
      */
     fun isConnected(): Boolean {
-        return connection != null && connection!!.isOpen
+        var result = true
+        if (syncCommands != null) {
+            try {
+                syncCommands!!.ping()
+            } catch (ex: RedisException) {
+                result = false
+                logger.error(ex.message)
+            }
+        }
+        return connection != null && connection!!.isOpen && result
     }
 
     /**
      * Disconnecting from database
      */
     fun closeConnection() {
-        if (connection != null)
+        if (connection != null) {
             connection!!.close()
-    }
-
-    private fun timerDatabaseConnection() {
-        timer("databaseConnectionTimer", initialDelay = TTL, period = 1L) {
-            closeConnection()
-            logger.info("Connection refused (Timeout TTL = $TTL)")
-            this.cancel()
+        }
+        if(timer != null) {
+            timer!!.cancel()
+            timer!!.purge()
         }
     }
 
-    private fun connectToDatabase(password: String, ip: String, port: Int) {
+    private var timer: Timer? = null
+    private fun timerDatabaseConnection() {
+        this.timer = timer("databaseConnectionTimer", initialDelay = TTL, period = 1L) {
+            closeConnection()
+            logger.info("Connection refused (Timeout TTL = $TTL)")
+        }
+    }
+
+    private fun connectToDatabase(password: String, ip: String, port: Int): JsonObject {
+        val jsonResult = JsonObject()
         try {
             redisClient = RedisClient.create("redis://$password@$ip:$port/0")
             connection = redisClient!!.connect()
 
             syncCommands = connection!!.sync()
+            syncCommands!!.setTimeout(Duration.ofSeconds(ANSWERTIMEOUT))
             logger.info("Connected to database.")
+            jsonResult.addProperty("statusCode", 1)
             timerDatabaseConnection()
 
         } catch (ex: RedisConnectionException) {
+            jsonResult.addProperty("statusCode", 16)
+            closeConnection()
             logger.error("${ex.message} (Database)")
         }
+        return jsonResult
     }
 
     /**
@@ -142,30 +169,6 @@ class DBClient {
     }
 
     /**
-     * Function for phone number adjustment if required
-     * @param phoneNumber - old number
-     * @return number after adjustment
-     */
-    private fun numberAdjustment(phoneNumber: String?): String {
-        //TODO: numAdj
-        var newNumber = ""
-        if (!phoneNumber.isNullOrEmpty())
-            newNumber = when (phoneNumber.matches(Regex(phoneNumberPattern))) {
-                true -> phoneNumber
-                false -> {
-                    println("here")
-                    if (phoneNumber.startsWith("8")) {
-                        println("H2")
-                        phoneNumber.replaceFirst("8", "+7")
-                    }
-                    phoneNumber.replace("[.-() ]", "")
-                    phoneNumber
-                }
-            }
-        return newNumber
-    }
-
-    /**
      * Method for adding person to database
      * @param person DBUser object
      */
@@ -186,6 +189,8 @@ class DBClient {
         var resultJson = JsonObject()
 
         if (!isConnected()) loadConfigAndConnect()
+
+        map["phoneNumber"] = map["phoneNumber"].toString().replace(Regex("""[( )_\-]*"""),"")
 
         if (isConnected()) {
             try {
@@ -579,7 +584,7 @@ class DBClient {
             for (key in keys) {
                 val userVkId = syncCommands!!.hget(key, "vkId")
                 if (vkId == userVkId.toInt()) {
-                    jsonResult.addProperty("id",key.removePrefix(userTableKey))
+                    jsonResult.addProperty("id", key.removePrefix(userTableKey))
                     result = true
                     break
                 }
@@ -612,7 +617,7 @@ class DBClient {
 
         persons.forEach {
             when (addPerson(it.copy(vkNotice = true, emailNotice = true, phoneNotice = true)).get("statusCode").asInt) {
-                11,18,16 -> {
+                11, 18, 16 -> {
                     wasErrors = true
                 }
                 15 -> {

@@ -32,7 +32,7 @@ abstract class ResponseHandler(val db: DBClient? = null) {
 
     val userIds = when (db) {
         null -> null
-        else -> mutableListOf<Int>(Gson().fromJson(db.getUsersVkIdForVkMailing().getAsJsonArray("vkIDs"), object : TypeToken<List<Int>>(){}.type))
+        else -> db.getUsersVkIdForVkMailing().getAsJsonArray("vkIDs").map { it.asInt }
     }
 
     abstract fun send(): JsonObject

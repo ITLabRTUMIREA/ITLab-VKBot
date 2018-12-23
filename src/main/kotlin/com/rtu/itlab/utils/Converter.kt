@@ -8,7 +8,7 @@ package com.rtu.itlab.utils
 fun mapAnyToMapString(inputs: Map<String, Any?>): Map<String, String> {
     val result = hashMapOf<String, String>()
     inputs.forEach {key,value->
-        if(value != null)
+        if(value != null && value != "null")
             result[key] = value.toString()
         else
             result[key] = ""
