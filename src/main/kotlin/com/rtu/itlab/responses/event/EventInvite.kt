@@ -23,6 +23,8 @@ class EventInvite(private val eventView: EventView, db: DBClient?) : ResponseHan
 //                        "\nСвое участие можете подтвердить в личном кабинете по ссылке: https://itlab.azurewebsites.net/notifications"
 //            )
 //            .execute()
+
+        //vk.messages().send(actor,userIds).unsafeParam("")
         return JsonObject()
     }
 
