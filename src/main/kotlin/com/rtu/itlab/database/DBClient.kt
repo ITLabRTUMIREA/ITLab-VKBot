@@ -592,6 +592,7 @@ class DBClient {
             jsonResult.addProperty("statusCode", 1)
             jsonResult.addProperty("result", result)
         } else {
+            jsonResult.addProperty("result","unknown")
             jsonResult.addProperty("statusCode", 18)
         }
 
