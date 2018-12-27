@@ -38,17 +38,18 @@ class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler
             logger.info("Invited users: ${invitedUserIds!!.toList()}")
             logger.info("Not invited users: ${userIdsWithoutInvite.toList()}")
 
-            vk.messages()
-                .send(actor, userIdsWithoutInvite)
-                .message(
-                    "Было создано новое событие!\n«${eventView.title}»" +
-                            "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                            "\nНачало: ${eventView.beginTime()}" +
-                            "\nОкончание: ${eventView.endTime()}" +
-                            "\nАдрес проведения мероприятия: ${eventView.address}" +
-                            "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}"
-                )
-                .execute()
+            if (userIdsWithoutInvite.isNotEmpty())
+                vk.messages()
+                    .send(actor, userIdsWithoutInvite)
+                    .message(
+                        "Было создано новое событие!\n«${eventView.title}»" +
+                                "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
+                                "\nНачало: ${eventView.beginTime()}" +
+                                "\nОкончание: ${eventView.endTime()}" +
+                                "\nАдрес проведения мероприятия: ${eventView.address}" +
+                                "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}"
+                    )
+                    .execute()
             resultJson.addProperty("statusCode", 1)
             logger.info("Info messages about new event sent to users VK")
         } else {

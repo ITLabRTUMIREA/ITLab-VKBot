@@ -28,8 +28,11 @@ class GetVkToken(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
 
     override fun send(): JsonObject {
         var message = "Nothing..."
-        if (!db!!.isUserInDBByVkId(vkId).get("result").asBoolean) {
+        println(db!!.isUserInDBByVkId(vkId).get("result").asString)
+        if (db!!.isUserInDBByVkId(vkId).get("result").asString != "true") {
+            println("HERE")
             if (token.startsWith("L:")) {
+                println("HERE 2")
                 Fuel.post(config.getString("apiserver.host") + "/api/account/property/vk")
                     .body(Gson().toJson(UserCard(token.substringAfter("L:"), vkId)))
                     .header(
@@ -37,9 +40,10 @@ class GetVkToken(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                         "Authorization" to config.getString("apiserver.accessToken")
                     )
                     .responseObject<ServerResponseJson> { _, _, result ->
-                        when {
-                            result.get().statusCode == 1 -> {
-
+                        println(result.get().statusCode)
+                        when (result.get().statusCode) {
+                            1 -> {
+                                println("HERE 1 ")
                                 //Getting result of adding person to database
                                 val addingResult = db!!.addPerson(
                                     result.get().data.copy(
@@ -58,7 +62,7 @@ class GetVkToken(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                             }
 
                             //If the auth code (token) was entered incorrectly
-                            result.get().statusCode == 26 -> message = "Проверьте правильность написания кода"
+                            26 -> message = "Проверьте правильность написания кода"
 
                             //If there are any other errors
                             else -> message = "При добавлении вашей учетной записи произошла ошибка 2"
@@ -70,7 +74,13 @@ class GetVkToken(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                         "Я не веду бесед с незнакомцами\n" +
                         "Проверьте правильность написания кода"
             }
-        } else {
+        }else if(db.isUserInDBByVkId(vkId).get("result").asString != "unknown"){
+            if (token.startsWith("L:"))
+                message = "Простите, на данный момент мы не можем вас авторизовать!\n" +
+                        "Повторите вашу попытку позже"
+            else
+                message = "Я не понимаю, что вы хотели мне сказать."
+        }else {
             //If user already authorized in the system
             if (token.startsWith("L:"))
                 message = "Ранее вы уже были авторизованы!"

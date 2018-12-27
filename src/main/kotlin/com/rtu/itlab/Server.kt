@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.database.DBUser
-import com.rtu.itlab.responses.*
+import com.rtu.itlab.responses.GetVkToken
 import com.rtu.itlab.responses.event.*
 import com.rtu.itlab.responses.event.models.EventView
 import com.rtu.itlab.responses.event.models.NotifyType
@@ -24,7 +24,8 @@ private lateinit var db: DBClient
 private val logger = LoggerFactory.getLogger("com.rtu.itlab.Server")
 
 fun Application.main() {
-    val config = Config("application.conf").config!!
+    Config().companion.pathToConfFile = "application.conf"
+    //val config = Config("application.conf").config!!
     db = DBClient()
 
     install(ContentNegotiation) {
@@ -35,18 +36,36 @@ fun Application.main() {
     }
 
     routing {
-        get("/") { call.respondText { "It's NOT OK" } }
+        get("/") { call.respond("It's OK") }
 
         post("/bot") {
             val tmp: JsonObject? =
                 Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
 
-            when (NotifyType.values()[tmp!!.get("type").asInt]) {
+            if (!tmp!!.get("type").asString.matches(Regex("[0-9]*"))) {
 
-                NotifyType.EventNew -> {
-                    logger.info("Request for new event.")
-                    call.respond(EventNew(Gson().fromJson(tmp.get("data"), EventView::class.java), db).send())
+                when (tmp.get("type").asString) {
+                    "confirmation" -> {
+                        val config = Config().config!!
+                        call.respond(config.getString("server.response"))
+                    }
+                    "message_new" -> {
+                        GetVkToken(tmp, db).send()
+                        call.respond("OK")
+                    }
+                    "message_reply" -> {
+                        call.respond("OK")
+                    }
                 }
+
+            } else {
+
+                when (NotifyType.values()[tmp.get("type").asInt]) {
+
+                    NotifyType.EventNew -> {
+                        logger.info("Request for new event.")
+                        call.respond(EventNew(Gson().fromJson(tmp.get("data"), EventView::class.java), db).send())
+                    }
 
 //                 -> {
 //                    EventInvite(Gson().fromJson(tmp, EventView::class.java), db).send()
@@ -96,7 +115,8 @@ fun Application.main() {
 //                    call.respond("OK") // Code Handler
 //                }
 
-                else -> call.respondText { "It's Ok, just Wrong" }
+                    else -> call.respondText { "It's Ok, just Wrong" }
+                }
             }
         }
 
