@@ -111,7 +111,7 @@ class DBClient {
         if (connection != null) {
             connection!!.close()
         }
-        if(timer != null) {
+        if (timer != null) {
             timer!!.cancel()
             timer!!.purge()
         }
@@ -190,7 +190,7 @@ class DBClient {
 
         if (!isConnected()) loadConfigAndConnect()
 
-        map["phoneNumber"] = map["phoneNumber"].toString().replace(Regex("""[( )_\-]*"""),"")
+        map["phoneNumber"] = map["phoneNumber"].toString().replace(Regex("""[( )_\-]*"""), "")
 
         if (isConnected()) {
             try {
@@ -288,6 +288,35 @@ class DBClient {
     }
 
     /**
+     * Getting DBUser class with info about user with key
+     * @param key id of user
+     */
+    fun getDbUserByKey(key: String?): DBUser? {
+        val userInfo = getUserInfoByKey(key)
+        return when (userInfo.get("statusCode").asInt) {
+            1 -> Gson().fromJson(userInfo.get("data").asJsonObject, DBUser::class.java)
+            else -> null
+        }
+    }
+
+    /**
+     * Updating person info
+     * @param userId id of user
+     * @param newInfo map of user params which we want to update
+     * @return result of updating
+     */
+    fun updatePersonInfo(userId: String, newInfo: Map<String, String>): JsonObject {
+        val json = JsonObject()
+
+        json.addProperty(userJsonKey, userId)
+
+        newInfo.forEach { (key, value) ->
+            json.addProperty(key, value)
+        }
+        return updatePersonInfo(json)
+    }
+
+    /**
      * Method for adding updated person info to database if person with this id already exist
      * @param person Json with id and new person's info
      * @return result of updating
@@ -310,7 +339,7 @@ class DBClient {
 
                 0L -> {
                     resultJson.addProperty("statusCode", 12)
-                    logger.error("Error updating person info")
+                    logger.error("Error updating person info (Person does not exist in database)")
                 }
 
                 else -> {
@@ -341,7 +370,7 @@ class DBClient {
         if (!isConnected()) loadConfigAndConnect()
         val resultJson = JsonObject()
         if (isConnected()) {
-            syncCommands!!.flushall() //TODO : TEST COMMAND
+            syncCommands!!.flushall()
             resultJson.addProperty("statusCode", 1)
             logger.info("All persons deleted")
         } else {
@@ -402,6 +431,33 @@ class DBClient {
     }
 
     /**
+     * Method to get information about user notifications
+     * @param vkId user VK Id
+     * @return Json result {"vkNotice":true,"emailNotice":true,"phoneNotice":true}
+     */
+    fun getUserNotifications(vkId: Int): JsonObject {
+        if (!isConnected()) loadConfigAndConnect()
+
+        val resultJson = JsonObject()
+
+        if (isConnected()) {
+            val response = isUserInDBByVkId(vkId)
+            if (response.get("result").asBoolean) {
+                val userInfo = getUserInfoByKey(response.get(userJsonKey).asString).get("data").asJsonObject
+                resultJson.addProperty("vkNotice", userInfo.get("vkNotice").asBoolean)
+                resultJson.addProperty("emailNotice", userInfo.get("emailNotice").asBoolean)
+                resultJson.addProperty("phoneNotice", userInfo.get("phoneNotice").asBoolean)
+                resultJson.addProperty("statusCode", 1)
+            } else {
+                resultJson.addProperty("statusCode", response.get("statusCode").asString)
+            }
+        } else {
+            resultJson.addProperty("statusCode", 18)
+        }
+        return resultJson
+    }
+
+    /**
      * Deleting person from database by id(key)
      * @param id person id
      */
@@ -444,10 +500,8 @@ class DBClient {
 
         if (isConnected()) {
 
-            var keys = mutableListOf<String>()
-
             jsonResult.addProperty("statusCode", 1)
-            keys = syncCommands!!.keys(usersKeyPattern)
+            val keys = syncCommands!!.keys(usersKeyPattern)
 
             keys.forEach { key ->
                 val email = syncCommands!!.hget(key, "email")
@@ -478,13 +532,8 @@ class DBClient {
 
         if (isConnected()) {
 
-            var keys: List<String> = mutableListOf()
             jsonResult.addProperty("statusCode", 1)
-            keys = when (isConnected()) {
-                true -> syncCommands!!.keys(usersKeyPattern)
-                else -> mutableListOf()
-            }
-
+            val keys: List<String> = syncCommands!!.keys(usersKeyPattern)
 
             keys.forEach { key ->
                 val vkId = syncCommands!!.hget(key, "vkId")
@@ -517,10 +566,12 @@ class DBClient {
         if (isConnected()) {
             jsonResult.addProperty("statusCode", 1)
             invitedUsers.forEach { dbUser ->
+                val userInfo = getDbUserByKey(dbUser.id)
                 when (val vkId = syncCommands!!.hget(userTableKey + dbUser.id, "vkId")) {
                     null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
                     else -> {
-                        if (vkId.toInt() != 0)
+
+                        if (vkId.toInt() != 0 && userInfo != null && userInfo.vkNotice)
                             result.add(vkId.toInt())
                     }
                 }
@@ -544,11 +595,10 @@ class DBClient {
     fun getUsersPhonesForPhoneMailing(): JsonObject {
         val jsonResult = JsonObject()
         val result = mutableSetOf<String>()
-        var keys: List<String> = mutableListOf()
         if (!isConnected()) loadConfigAndConnect()
 
         if (isConnected()) {
-            keys = syncCommands!!.keys(usersKeyPattern)
+            val keys = syncCommands!!.keys(usersKeyPattern)
             jsonResult.addProperty("statusCode", 1)
 
             keys.forEach { key ->
@@ -592,7 +642,7 @@ class DBClient {
             jsonResult.addProperty("statusCode", 1)
             jsonResult.addProperty("result", result)
         } else {
-            jsonResult.addProperty("result","unknown")
+            jsonResult.addProperty("result", "unknown")
             jsonResult.addProperty("statusCode", 18)
         }
 

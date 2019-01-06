@@ -18,38 +18,27 @@ class EventNew(private val eventView: EventView, db: DBClient) : ResponseHandler
 
     override fun send(): JsonObject {
 
-
         if (!userIds!!.isEmpty()) {
 
-            val invitedUserIds = when (db) {
-                null -> null
-                else -> db.getUsersVkIdForVkMailing(eventView.invited()).getAsJsonArray("vkIDs").map { it.asInt }
+            val notify = NotifyMessages().event().eventNew(eventView.title).eventInfo(eventView)
+
+            val users = Users(eventView)
+
+            logger.info("Invited users: ${users.invitedUsers}")
+            logger.info("Not invited users: ${users.notInvitedUsers}")
+
+            if (users.invitedUsers.isNotEmpty()) {
+                EventInvite().send(users.invitedUsers, notify)
             }
 
-            val userIdsWithoutInvite: List<Int>
+            if (users.notInvitedUsers.isNotEmpty())
 
-            if (!invitedUserIds.isNullOrEmpty()) {
-                userIdsWithoutInvite = userIds.subtract(invitedUserIds).toList()
-                EventInvite(eventView, db).send(invitedUserIds.toMutableSet())
-            } else {
-                userIdsWithoutInvite = userIds.toList()
-            }
-
-            logger.info("Invited users: ${invitedUserIds!!.toList()}")
-            logger.info("Not invited users: ${userIdsWithoutInvite.toList()}")
-
-            if (userIdsWithoutInvite.isNotEmpty())
                 vk.messages()
-                    .send(actor, userIdsWithoutInvite)
+                    .send(actor, users.notInvitedUsers)
                     .message(
-                        "Было создано новое событие!\n«${eventView.title}»" +
-                                "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                                "\nНачало: ${eventView.beginTime()}" +
-                                "\nОкончание: ${eventView.endTime()}" +
-                                "\nАдрес проведения мероприятия: ${eventView.address}" +
-                                "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}"
-                    )
-                    .execute()
+                        notify.concatenate()
+                    ).execute()
+
             resultJson.addProperty("statusCode", 1)
             logger.info("Info messages about new event sent to users VK")
         } else {
