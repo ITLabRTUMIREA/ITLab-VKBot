@@ -2,9 +2,10 @@ package com.rtu.itlab
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.rtu.itlab.bot.keyboard.getKeyboardForCurrentPerson
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.database.DBUser
-import com.rtu.itlab.responses.GetVkToken
+import com.rtu.itlab.responses.VKMessageHandling
 import com.rtu.itlab.responses.event.*
 import com.rtu.itlab.responses.event.models.EventView
 import com.rtu.itlab.responses.event.models.NotifyType
@@ -18,14 +19,13 @@ import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
 import org.slf4j.LoggerFactory
-import kotlin.concurrent.timer
 
 private lateinit var db: DBClient
 private val logger = LoggerFactory.getLogger("com.rtu.itlab.Server")
 
 fun Application.main() {
     Config().companion.pathToConfFile = "application.conf"
-    //val config = Config("application.conf").config!!
+
     db = DBClient()
 
     install(ContentNegotiation) {
@@ -50,7 +50,7 @@ fun Application.main() {
                         call.respond(config.getString("server.response"))
                     }
                     "message_new" -> {
-                        GetVkToken(tmp, db).send()
+                        VKMessageHandling(tmp, db).send()
                         call.respond("OK")
                     }
                     "message_reply" -> {
@@ -59,63 +59,41 @@ fun Application.main() {
                 }
 
             } else {
+                val type = tmp.get("type").asInt
+                if (type <= NotifyType.values().size - 1) {
+                    when (NotifyType.values()[tmp.get("type").asInt]) {
 
-                when (NotifyType.values()[tmp.get("type").asInt]) {
+                        NotifyType.EventNew -> {
+                            logger.info("Request for new event.")
+                            call.respond(EventNew(Gson().fromJson(tmp.get("data"), EventView::class.java), db).send())
+                        }
 
-                    NotifyType.EventNew -> {
-                        logger.info("Request for new event.")
-                        call.respond(EventNew(Gson().fromJson(tmp.get("data"), EventView::class.java), db).send())
+                        NotifyType.EventChange -> {
+                            logger.info("Request for changed event")
+                            call.respond(
+                                EventChange(
+                                    Gson().fromJson(tmp.get("data"), EventView::class.java),
+                                    db
+                                ).send()
+                            )
+                        }
+
+                        NotifyType.EventConfirm -> {
+                            logger.info("Request for changed event")
+                            val userId = tmp.get("data").asJsonObject.get("user").asJsonObject.get("id").asString
+                            call.respond(
+                                EventConfirm(
+                                    Gson().fromJson(tmp.get("data"), EventView::class.java),
+                                    db,
+                                    userId
+                                ).send()
+                            )
+                        }
+
+                        else -> call.respondText { "Wrong type" }
                     }
-
-//                 -> {
-//                    EventInvite(Gson().fromJson(tmp, EventView::class.java), db).send()
-//                }
-//
-//                "EquipmentAdded" -> {
-//                    EquipmentAdded(tmp).send()
-//                }
-//
-//                "EventChange" -> {
-//                    EventChange(Gson().fromJson(tmp, EventView::class.java), db).send()
-//                }
-//
-//                "EventConfirm" -> {
-//                    EventConfirm(Gson().fromJson(tmp, EventView::class.java), db).send()
-//                }
-//
-//                "EventDenied" -> {
-//                    EventDenied(Gson().fromJson(tmp, EventView::class.java), db).send()
-//                }
-//
-//                "EventDeleted" -> {
-//                    EventDeleted(Gson().fromJson(tmp, EventView::class.java), db).send()
-//                }
-//
-//                "EventExcluded" -> {
-//                    EventExcluded(Gson().fromJson(tmp, EventView::class.java), db).send()
-//                }
-//
-//                "EventFreePlace" -> {
-//                    //EventFreePlace(tmp, db).send()
-//                }
-//
-//
-//                "EventReminder" -> {
-//                    EventReminder(Gson().fromJson(tmp, EventView::class.java), db).send()
-//                }
-//
-//                "confirmation" -> {
-//                    call.respond(config.getString("server.response"))
-//                    // VK synergy
-//                }
-//
-//
-//                "message_new" -> {
-//                    GetVkToken(tmp, db).send()
-//                    call.respond("OK") // Code Handler
-//                }
-
-                    else -> call.respondText { "It's Ok, just Wrong" }
+                } else {
+                    call.respond("Error number of NotifyType")
                 }
             }
         }
@@ -183,6 +161,10 @@ fun Application.main() {
 
         get("/bot/db/dump") {
             call.respond(db.makeDump())
+        }
+
+        get("/bot/keyboard/{vkId}") {
+            call.respond(getKeyboardForCurrentPerson(call.parameters["vkId"]!!.toInt(), db).getKeyboardJson())
         }
 
         delete("/bot/db/person/delete/{id}") {

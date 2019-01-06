@@ -4,39 +4,35 @@ import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.responses.ResponseHandler
 import com.rtu.itlab.responses.event.models.EventView
-import com.rtu.itlab.responses.event.models.beginTime
-import com.rtu.itlab.responses.event.models.endTime
-import com.rtu.itlab.responses.event.models.targetParticipantsCount
+import org.slf4j.LoggerFactory
 
-/**
- * The class for notifying the user that his participation in the event is confirmed
- * @param tmp - Json info about event
- * @param db - Database with persons info
- */
-class EventConfirm(val eventView: EventView, db: DBClient) : ResponseHandler(db) {
+class EventConfirm(private val eventView: EventView, db: DBClient, val id: String) : ResponseHandler(db) {
 
-    //TODO: Specify how id will be received
-    override fun send(): JsonObject{
-        vk.messages()
-                .send(actor, userIds)
-                .message("Ваше участие в собитии «${eventView.title}» было подтверждено!" +
-                        "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                        "\nНачало: ${eventView.beginTime()}" +
-                        "\nОкончание: ${eventView.endTime()}" +
-                        "\nАдрес проведения мероприятия: ${eventView.address}" +
-                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}")
-                .execute()
+    private val logger = LoggerFactory.getLogger("com.rtu.itlab.responses.event.EventConfirm")
+
+    override fun send(): JsonObject {
+        val userInfo = db!!.getDbUserByKey(id)
+
+        if (userInfo != null) {
+
+            val notify = NotifyMessages().event().eventConfirm(eventView.title).addUrl(eventView)
+
+            logger.info("User vkId: ${userInfo.vkId}")
+            if (userInfo.vkNotice) {
+                vk.messages()
+                    .send(actor, userInfo.vkId!!.toInt())
+                    .message(
+                        notify.concatenate()
+                    ).execute()
+            }
+
+            resultJson.addProperty("statusCode", 1)
+            logger.info("Info messages about event confirm sent to user VK ${userInfo.vkNotice}")
+        } else {
+            resultJson.addProperty("statusCode", 30)
+            logger.error("Can't send messages to user, can't find him in db!")
+        }
         return resultJson
     }
 
-    fun send(userId: Int) {
-        vk.messages().send(actor, userId)
-                .message("Ваше участие в собитии «${eventView.title}» было подтверждено!" +
-                        "\nНеобходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                        "\nНачало: ${eventView.beginTime()}" +
-                        "\nОкончание: ${eventView.endTime()}" +
-                        "\nАдрес проведения мероприятия: ${eventView.address}" +
-                        "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}")
-                .execute()
-    }
 }
