@@ -2,6 +2,7 @@ package com.rtu.itlab.responses
 
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
+import com.rtu.itlab.database.DBUser
 import com.rtu.itlab.responses.event.EventInvite
 import com.rtu.itlab.responses.event.NotifyMessages
 import com.rtu.itlab.responses.event.models.EventView
@@ -31,9 +32,19 @@ abstract class ResponseHandler(val db: DBClient? = null) {
 
     val actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
 
-    val userIds = when (db) {
+    val usersIds = when (db) {
         null -> null
         else -> db.getUsersVkIdForVkMailing().getAsJsonArray("vkIDs").map { it.asInt }
+    }
+
+    val usersEmails = when (db) {
+        null -> null
+        else -> db.getUsersMailsForEmailMailing().getAsJsonArray("emails").map { it.asString }
+    }
+
+    val usersPhones = when (db) {
+        null -> null
+        else -> db.getUsersPhonesForPhoneMailing().getAsJsonArray("phonesNumbers").map { it.asString }
     }
 
 
@@ -42,31 +53,70 @@ abstract class ResponseHandler(val db: DBClient? = null) {
      */
     inner class Users(eventView: EventView) {
 
-        val invitedUsers = mutableListOf<Int>()
-        val notInvitedUsers = mutableListOf<Int>()
+        val invitedUsersVks = mutableListOf<Int>()
+        val notInvitedUsersVks = mutableListOf<Int>()
+        val invitedUsersEmails = mutableListOf<String>()
+        val notInvitedUsersEmails = mutableListOf<String>()
+        val invitedUsersPhones = mutableListOf<String>()
+        val notInvitedUsersPhones = mutableListOf<String>()
 
         init {
-            if (!userIds!!.isEmpty()) {
+            val userIdsWithoutInvite: List<Int>
+            val usersEmailsWithoutInvite: List<String>
+            val usersPhonesWithoutInvite: List<String>
+
+            if (!usersIds!!.isEmpty()) {
 
                 val invitedUserIds = when (db) {
                     null -> null
                     else -> db.getUsersVkIdForVkMailing(eventView.invited()).getAsJsonArray("vkIDs").map { it.asInt }
                 }
-                //TODO: PRINT
-                println(invitedUserIds)
-
-                val userIdsWithoutInvite: List<Int>
 
                 if (!invitedUserIds.isNullOrEmpty()) {
-                    userIdsWithoutInvite = userIds.subtract(invitedUserIds).toList()
-                    invitedUsers.addAll(invitedUserIds)
+                    userIdsWithoutInvite = usersIds.subtract(invitedUserIds).toList()
+                    invitedUsersVks.addAll(invitedUserIds)
                 } else {
-                    userIdsWithoutInvite = userIds.toList()
+                    userIdsWithoutInvite = usersIds.toList()
                 }
-                notInvitedUsers.addAll(userIdsWithoutInvite)
+
+                notInvitedUsersVks.addAll(userIdsWithoutInvite)
+
+            }
+
+            if (!usersEmails!!.isEmpty()) {
+                val invitedUserEmails = when (db) {
+                    null -> null
+                    else -> db.getUsersEmailsForEmailMailing(eventView.invited()).getAsJsonArray("emails").map { it.asString }
+                }
+
+                if (!invitedUserEmails.isNullOrEmpty()) {
+                    usersEmailsWithoutInvite = usersEmails.subtract(invitedUserEmails).toList()
+                    invitedUsersEmails.addAll(invitedUserEmails)
+                } else {
+                    usersEmailsWithoutInvite = usersEmails.toList()
+                }
+
+                notInvitedUsersEmails.addAll(usersEmailsWithoutInvite)
+            }
+
+            if (!usersPhones!!.isEmpty()) {
+                val invitedUserPhones = when (db) {
+                    null -> null
+                    else -> db.getUsersPhonesForPhoneMailing(eventView.invited()).getAsJsonArray("phonesNumbers").map { it.asString }
+                }
+
+                if (!invitedUserPhones.isNullOrEmpty()) {
+                    usersPhonesWithoutInvite = usersPhones.subtract(invitedUserPhones).toList()
+                    invitedUsersPhones.addAll(invitedUserPhones)
+                } else {
+                    usersPhonesWithoutInvite = usersPhones.toList()
+                }
+
+                notInvitedUsersPhones.addAll(usersPhonesWithoutInvite)
             }
         }
     }
 
     abstract fun send(): JsonObject
+    abstract fun sendEmail()
 }

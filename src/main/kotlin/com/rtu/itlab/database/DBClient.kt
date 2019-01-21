@@ -554,9 +554,34 @@ class DBClient {
     }
 
     /**
+     * Get a set of DBUser who want to receive notifications by vk.
+     * @param invitedUsers List of invited Users
+     * @return result set of invited users which founded in database
+     */
+    fun getDBUsersForVkMailing(invitedUsers: List<DBUser>): MutableSet<DBUser> {
+        val result = mutableSetOf<DBUser>()
+        if (!isConnected()) loadConfigAndConnect()
+
+        if (isConnected()) {
+            invitedUsers.forEach { dbUser ->
+                val userInfo = getDbUserByKey(dbUser.id)
+                if (userInfo?.vkId != null && userInfo.vkId != "0" && userInfo.vkId != "" && userInfo.vkNotice) {
+                    result.add(userInfo)
+                    logger.error("User ${userInfo.firstName} ${userInfo.lastName} was added for vk notice")
+                } else {
+                    logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
+                }
+
+            }
+
+        }
+        return result
+    }
+
+    /**
      * Get a set of users vk ids who want to receive notifications by vk.
      * @param invitedUsers List of invited Users
-     * @return result jsonObject
+     * @return result jsonObject with list of invited users which founded in database
      */
     fun getUsersVkIdForVkMailing(invitedUsers: List<DBUser>): JsonObject {
         val jsonResult = JsonObject()
@@ -571,8 +596,10 @@ class DBClient {
                     null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
                     else -> {
 
-                        if (vkId.toInt() != 0 && userInfo != null && userInfo.vkNotice)
+                        if (vkId.toInt() != 0 && userInfo != null && userInfo.vkNotice) {
                             result.add(vkId.toInt())
+                            logger.error("User ${userInfo.firstName} ${userInfo.lastName} was added for vk notice")
+                        }
                     }
                 }
             }
@@ -587,6 +614,125 @@ class DBClient {
         return jsonResult
     }
 
+    /**
+     * Get a set of users emails who want to receive notifications by email.
+     * @param invitedUsers List of invited Users
+     * @return result set of invited users which founded in database
+     */
+    fun getDBUsersForEmailMailing(invitedUsers: List<DBUser>): MutableSet<DBUser> {
+        val result = mutableSetOf<DBUser>()
+        if (!isConnected()) loadConfigAndConnect()
+
+        if (isConnected()) {
+            invitedUsers.forEach { dbUser ->
+                val userInfo = getDbUserByKey(dbUser.id)
+                if (userInfo?.email != null && userInfo.email != "" && userInfo.emailNotice) {
+                    result.add(userInfo)
+                    logger.error("User ${userInfo.firstName} ${userInfo.lastName} was added for email notice")
+                } else {
+                    logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
+                }
+
+            }
+
+        }
+        return result
+    }
+
+    /**
+     * Get a set of users emails who want to receive notifications by email.
+     * @param invitedUsers List of invited Users
+     * @return result jsonObject with list of invited users which founded in database
+     */
+    fun getUsersEmailsForEmailMailing(invitedUsers: List<DBUser>): JsonObject {
+        val jsonResult = JsonObject()
+        val result = mutableSetOf<String>()
+        if (!isConnected()) loadConfigAndConnect()
+
+        if (isConnected()) {
+            jsonResult.addProperty("statusCode", 1)
+            invitedUsers.forEach { dbUser ->
+                val userInfo = getDbUserByKey(dbUser.id)
+                when (val email = syncCommands!!.hget(userTableKey + dbUser.id, "email")) {
+                    null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
+                    else -> {
+                        if (email != "" && userInfo != null && userInfo.emailNotice) {
+                            result.add(email)
+                            logger.error("User ${userInfo.firstName} ${userInfo.lastName} was added for email notice")
+                        }
+                    }
+                }
+            }
+
+        } else {
+            jsonResult.addProperty("statusCode", 18)
+        }
+
+        val element = Gson().toJsonTree(result, object : TypeToken<MutableSet<Int>>() {}.type)
+        jsonResult.add("emails", element.asJsonArray)
+
+        return jsonResult
+    }
+
+    /**
+     * Get a set of users phones who want to receive notifications by phone.
+     * @param invitedUsers List of invited Users
+     * @return result set of invited users which founded in database
+     */
+    fun getDBUsersForPhoneMailing(invitedUsers: List<DBUser>): MutableSet<DBUser> {
+        val result = mutableSetOf<DBUser>()
+        if (!isConnected()) loadConfigAndConnect()
+
+        if (isConnected()) {
+            invitedUsers.forEach { dbUser ->
+                val userInfo = getDbUserByKey(dbUser.id)
+                if (userInfo?.phoneNumber != null && userInfo.phoneNumber != "" && userInfo.phoneNotice) {
+                    result.add(userInfo)
+                    logger.error("User ${userInfo.firstName} ${userInfo.lastName} was added for phone notice")
+                } else {
+                    logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
+                }
+
+            }
+
+        }
+        return result
+    }
+
+    /**
+     * Get a set of users phones who want to receive notifications by phone.
+     * @param invitedUsers List of invited Users
+     * @return result jsonObject with list of invited users which founded in database
+     */
+    fun getUsersPhonesForPhoneMailing(invitedUsers: List<DBUser>): JsonObject {
+        val jsonResult = JsonObject()
+        val result = mutableSetOf<String>()
+        if (!isConnected()) loadConfigAndConnect()
+
+        if (isConnected()) {
+            jsonResult.addProperty("statusCode", 1)
+            invitedUsers.forEach { dbUser ->
+                val userInfo = getDbUserByKey(dbUser.id)
+                when (val phoneNumber = syncCommands!!.hget(userTableKey + dbUser.id, "phoneNumber")) {
+                    null -> logger.error("User ${dbUser.firstName} ${dbUser.lastName} was not found in database")
+                    else -> {
+                        if (phoneNumber != "" && phoneNumber != "0" && userInfo != null && userInfo.phoneNotice) {
+                            result.add(phoneNumber)
+                            logger.error("User ${userInfo.firstName} ${userInfo.lastName} was added for phone notice")
+                        }
+                    }
+                }
+            }
+
+        } else {
+            jsonResult.addProperty("statusCode", 18)
+        }
+
+        val element = Gson().toJsonTree(result, object : TypeToken<MutableSet<Int>>() {}.type)
+        jsonResult.add("phonesNumbers", element.asJsonArray)
+
+        return jsonResult
+    }
 
     /**
      * Get a set of users phones numbers who want to receive notifications by phone.
@@ -614,7 +760,7 @@ class DBClient {
         }
 
         val element = Gson().toJsonTree(result, object : TypeToken<MutableSet<String>>() {}.type)
-        jsonResult.add("phones", element.asJsonArray)
+        jsonResult.add("phonesNumbers", element.asJsonArray)
 
         return jsonResult
     }

@@ -10,8 +10,30 @@ import com.rtu.itlab.database.DBClient
 import com.rtu.itlab.utils.ServerResponseJson
 import com.rtu.itlab.utils.UserCard
 import com.rtu.itlab.bot.keyboard.keyboard
+import com.rtu.itlab.emailsender.*
 
 class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
+
+    override fun sendEmail() {
+        val html = HtmlEmail()
+        html.changeDescription(
+            "<p>Ваш аккаунт сайта ${config.getString("frontend.host")} был привязан к системе уведомлений</p>" +
+                    "<p>Управлять(отключать или включать) уведомлениями вы можете путем общения с ботом RTU IT Lab</p>"
+        )
+
+        html.changeTitle("Уведомление об успешном подключении системы уведомлений")
+
+        html.changeUrl(config.getString("frontend.host"))
+
+        val userEmail = db!!.getDbUserByKey(db.isUserInDBByVkId(vkId).get("id").asString)!!.email!!
+
+        sendMail(
+            UserMail(config.getString("mail.email"), config.getString("mail.password")),
+            MailMessage("RTUITLAB NOTIFICATION", html.getHtmlString().replace("Перейти к событию", "Перейти на сайт")),
+            HostMail(config.getString("mail.port"), config.getString("mail.host")),
+            setOf(userEmail)
+        )
+    }
 
     private val vkId = tmp!!.getAsJsonObject("object").get("from_id").asInt
     private val messageText: String = tmp!!.getAsJsonObject("object").get("text").asString
@@ -64,6 +86,7 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                         when (addingResult) {
                             1 -> {
                                 keyboard = getKeyboardJson()
+                                sendEmail()
                                 "Поздравляем, ваша учетня запись прикреплена"
                             }
                             else -> "При добавлении вашей учетной записи произошла ошибка 1"
@@ -138,7 +161,7 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
             db.isUserInDBByVkId(vkId).get("id").asString,
             mutableMapOf(Pair("${typeNotice}Notice", "false"))
         ).get("statusCode").asInt
-        //keyboard = getKeyboardJson()
+
         return when (statusCode) {
             1 -> "Вы успешно отписаны от $typeNotice рассылки!"
             else -> "По непонятным причинам вы не были отписаны от $typeNotice рассылки"
@@ -151,7 +174,7 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
             db.isUserInDBByVkId(vkId).get("id").asString,
             mutableMapOf(Pair("${typeNotice}Notice", "true"))
         ).get("statusCode").asInt
-        //keyboard = getKeyboardJson()
+
         return when (statusCode) {
             1 -> "Вы успешно подписаны на $typeNotice рассылку!"
             else -> "По непонятным причинам вы не были подписаны на $typeNotice рассылку"
