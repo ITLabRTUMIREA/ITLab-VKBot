@@ -97,7 +97,7 @@ fun getKeyboardForCurrentPerson(vkId: Int, db: DBClient): KeyboardButtons {
 
     if (userNotifications.get("statusCode").asInt == 1) {
         keyboardButtons.createLine()
-        //keyboardButtons.createLine()
+        keyboardButtons.createLine()
         //keyboardButtons.createLine()
 
         if (userNotifications.get("vkNotice").asBoolean)
@@ -117,7 +117,7 @@ fun getKeyboardForCurrentPerson(vkId: Int, db: DBClient): KeyboardButtons {
 
 
         keyboardButtons.addButtonToLine(0, 0)
-        //keyboardButtons.addButtonToLine(1, 1)
+        keyboardButtons.addButtonToLine(1, 1)
         //keyboardButtons.addButtonToLine(2, 2)
     }
 

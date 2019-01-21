@@ -5,6 +5,7 @@ import com.rtu.itlab.responses.event.models.beginTime
 import com.rtu.itlab.responses.event.models.endTime
 import com.rtu.itlab.responses.event.models.targetParticipantsCount
 import com.rtu.itlab.utils.Config
+import java.text.SimpleDateFormat
 
 class NotifyMessages {
 
@@ -48,13 +49,12 @@ class Event : Builder() {
      */
     fun eventInfo(eventView: EventView): Event {
 
-        val config = Config().config!!
+        val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy, HH:mm")
 
         val text = "Необходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                "\nНачало: ${eventView.beginTime()}" +
-                "\nОкончание: ${eventView.endTime()}" +
-                "\nАдрес проведения мероприятия: ${eventView.address}" +
-                "\nСсылка на событие: ${config.getString("frontend.host")}/events/${eventView.id}"
+                "\nНачало: ${dateFormat.format(eventView.beginTime().time)}" +
+                "\nОкончание: ${dateFormat.format(eventView.endTime().time)}" +
+                "\nАдрес проведения мероприятия: ${eventView.address}"
 
         return addParams("event_info", text) as Event
     }
@@ -94,11 +94,15 @@ class Event : Builder() {
         ) as Event
     }
 
+    /**
+     * Concatenating parameters for vk notify
+     * @return concatenated string, which we can send
+     */
     fun concatenate(): String {
         var result = ""
 
         if (params.contains("user_name"))
-            result += params["user_name"] + "\n"
+            result += params["user_name"] + "!\n"
 
         if (params.contains("event_new"))
             result += params["event_new"] + "\n"
@@ -121,6 +125,47 @@ class Event : Builder() {
         return result
     }
 
+    /**
+     * Getting parameters for email notify
+     * @return map that contain title, description and url
+     */
+    fun getForEmailNotice(): MutableMap<String, String> {
+        val result = mutableMapOf<String, String>()
+
+        if (params.contains("user_name"))
+            result["description"] = "<p>" + params["user_name"]!! + "!</p>"
+
+        if (params.contains("event_new"))
+            result["title"] = params["event_new"]!!
+
+        if (params.contains("event_change"))
+            result["title"] = params["event_change"]!!
+
+        if (params.contains("event_confirm"))
+            result["title"] = params["event_confirm"]!!
+
+        if (params.contains("event_invite")) {
+            if (result.contains("title"))
+                result["title"] = "<p>" + result["title"] + "</p>" + "<p>" + params["event_invite"]!! + "</p>"
+            else
+                result["title"] = params["event_invite"]!!
+        }
+
+        if (params.contains("event_info")) {
+            var resultStr = ""
+            if (result.contains("description"))
+                resultStr += result["description"]
+            params["event_info"]!!.lines().forEach { line ->
+                resultStr += "<p>$line</p>"
+            }
+            result["description"] = resultStr
+        }
+
+        if (params.contains("event_url"))
+            result["url"] = params["event_url"]!!
+
+        return result
+    }
 }
 
 abstract class Builder {
