@@ -58,4 +58,13 @@ class Config {
 
     }
 
+    /**
+     * Check path in config file. If the path is then return its value otherwise null
+     * @param path path in config file
+     * @return string value from config file or null
+     */
+    fun checkPath(path: String): String? =
+        if (config != null && config!!.hasPath(path)) config!!.getString(path) else null
+
+
 }

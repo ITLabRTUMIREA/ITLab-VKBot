@@ -1,6 +1,7 @@
 package com.rtu.itlab.emailsender
 
 import com.rtu.itlab.utils.Config
+import com.typesafe.config.ConfigException
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -14,8 +15,12 @@ class HtmlEmail {
 
     init {
         val config = Config().config!!
-        pathToHtmlEmail += config.getString("htmlEmail.path")
-        htmlCode += getWebSiteCode(pathToHtmlEmail)
+        try {
+            pathToHtmlEmail += config.getString("htmlEmail.path")
+            htmlCode += getWebSiteCode(pathToHtmlEmail)
+        } catch (ex: ConfigException) {
+            logger.info(ex.message + " (Config)")
+        }
     }
 
     /**
