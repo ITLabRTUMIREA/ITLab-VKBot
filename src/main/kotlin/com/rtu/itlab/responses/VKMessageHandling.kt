@@ -95,7 +95,7 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
         if (db!!.isUserInDBByVkId(vkId).get("result").asString != "true") {
 
             if (messageText.startsWith("L:")) {
-                var resultC: Result<ServerResponseJson, FuelError>?
+                var responseObject: ServerResponseJson? = null
                 try {
                     val (_, _, result) = Fuel.post(config.getString("apiserver.host") + "/api/account/property/vk").body(
                         Gson().toJson(UserCard(messageText.substringAfter("L:"), vkId))
@@ -103,18 +103,22 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                         "Content-Type" to "application/json",
                         "Authorization" to config.getString("apiserver.accessToken")
                     ).responseObject<ServerResponseJson>()
-                    resultC = result
+
+                    if (result.component2() == null && result.get().data != null)
+                        responseObject = result.get()
+                    else
+                        logger.error("Fuel error")
+
                 } catch (ex: Exception) {
-                    resultC = null
-                    logger.error(ex.message)
+                    logger.error(ex.message + " HERE")
                 }
 
-                message = if (resultC != null) {
-                    when (resultC.get().statusCode) {
+                message = if (responseObject != null) {
+                    when (responseObject.statusCode) {
                         1 -> {
                             //Getting result of adding person to database
                             val addingResult = db.addPerson(
-                                resultC.get().data.copy(
+                                responseObject.data!!.copy(
                                     vkId = vkId.toString(), vkNotice = true,
                                     emailNotice = true, phoneNotice = true
                                 )
