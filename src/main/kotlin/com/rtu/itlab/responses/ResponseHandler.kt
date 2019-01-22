@@ -2,15 +2,14 @@ package com.rtu.itlab.responses
 
 import com.google.gson.JsonObject
 import com.rtu.itlab.database.DBClient
-import com.rtu.itlab.database.DBUser
-import com.rtu.itlab.responses.event.EventInvite
-import com.rtu.itlab.responses.event.NotifyMessages
 import com.rtu.itlab.responses.event.models.EventView
 import com.rtu.itlab.responses.event.models.invited
 import com.rtu.itlab.utils.Config
 import com.vk.api.sdk.client.VkApiClient
 import com.vk.api.sdk.client.actors.GroupActor
 import com.vk.api.sdk.httpclient.HttpTransportClient
+import org.slf4j.LoggerFactory
+import java.lang.Exception
 
 
 /**
@@ -21,6 +20,7 @@ abstract class ResponseHandler(val db: DBClient? = null) {
     val config = Config().config!!
     private val transportClient = HttpTransportClient.getInstance()
     val vk = VkApiClient(transportClient)
+    private val logger = LoggerFactory.getLogger("com.rtu.itlab.responses.ResponseHandler")
 
     /**
      * Status codes:
@@ -30,7 +30,16 @@ abstract class ResponseHandler(val db: DBClient? = null) {
      */
     val resultJson = JsonObject()
 
-    val actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
+    var actor: GroupActor?
+
+    init {
+        try {
+            actor = GroupActor(config.getInt("group.id"), config.getString("group.accessToken"))
+        } catch (ex: Exception) {
+            actor = null
+            logger.error(ex.message)
+        }
+    }
 
     val usersIds = when (db) {
         null -> null

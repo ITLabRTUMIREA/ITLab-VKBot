@@ -6,10 +6,14 @@ import com.rtu.itlab.database.DBUser
 import com.rtu.itlab.emailsender.*
 import com.rtu.itlab.responses.ResponseHandler
 import com.rtu.itlab.responses.event.models.EventView
+import com.rtu.itlab.utils.Config
+import com.typesafe.config.ConfigException
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
 class EventConfirm(eventView: EventView, db: DBClient, val id: String) : ResponseHandler(db) {
-    override fun sendEmail(){}
+    override fun sendEmail() {}
 
     private fun sendEmail(user: DBUser) {
         val html = HtmlEmail()
@@ -27,15 +31,24 @@ class EventConfirm(eventView: EventView, db: DBClient, val id: String) : Respons
 
         if (emailNotify.contains("url"))
             html.changeUrl(emailNotify["url"]!!.removePrefix("Ссылка на событие: "))
-        else
-            html.changeUrl(config.getString("frontend.host"))
-
-        sendMail(
-            UserMail(config.getString("mail.email"), config.getString("mail.password")),
-            MailMessage("RTUITLAB NOTIFICATION", html.getHtmlString()),
-            HostMail(config.getString("mail.port"), config.getString("mail.host")),
-            setOf(user.email!!)
-        )
+        else when (val response = Config().checkPath("frontend.host")) {
+            null -> html.changeUrl(config.getString("null"))
+            else -> html.changeUrl(response)
+        }
+        try {
+            if (html.getHtmlString().isNotBlank()) {
+                sendMail(
+                    UserMail(config.getString("mail.email"), config.getString("mail.password")),
+                    MailMessage("RTUITLAB NOTIFICATION", html.getHtmlString()),
+                    HostMail(config.getString("mail.port"), config.getString("mail.host")),
+                    setOf(user.email!!)
+                )
+            } else {
+                logger.error("Html is empty or blank. Can't send message to users!")
+            }
+        } catch (ex: ConfigException) {
+            logger.error(ex.message + " (CONFIG)")
+        }
 
         logger.info("Info messages about event confirm sent to user ${user.id} Email ${user.emailNotice}")
     }
@@ -48,8 +61,7 @@ class EventConfirm(eventView: EventView, db: DBClient, val id: String) : Respons
         val userInfo = db!!.getDbUserByKey(id)
 
         if (userInfo != null) {
-
-            sendEmail(userInfo)
+            GlobalScope.launch { sendEmail(userInfo) }
 
             logger.info("User vkId: ${userInfo.vkId}")
             if (userInfo.vkNotice) {
