@@ -1,8 +1,11 @@
 .idea/workspace.xml
 
-src/main/resources/config\.properties
-
 # Log file
 *.log
 
 target/
+\.idea/
+
+src/main/resources/application\.conf
+
+application\.conf

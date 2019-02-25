@@ -3,18 +3,21 @@ package com.rtu.itlab
 import io.ktor.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import org.slf4j.LoggerFactory
 
-const val PORT = 8080
-
-private const val portArg = "-port"
-private var port = 8878
+//Server port
+private const val SPORTARG = "-p"
+private var sPort = 8080
 
 fun main(args: Array<String>) {
+    val logger = LoggerFactory.getLogger("com.rtu.itlab.Server")
 
-    val portObtainedInArgs  = args.isNotEmpty() && args[0].startsWith(portArg)
+    val portObtainedInArgs = args.isNotEmpty() && args[0].startsWith(SPORTARG)
 
-    if(portObtainedInArgs)
-        port = args[0].split("=").last().trim().toInt()
+    if (portObtainedInArgs)
+        sPort = args[0].split("=").last().trim().toInt()
 
-    embeddedServer(Netty, PORT, module = Application::main).start(wait = true)
+    logger.info("Starting server at port $sPort")
+
+    embeddedServer(Netty, sPort, module = Application::main).start(wait = true)
 }
