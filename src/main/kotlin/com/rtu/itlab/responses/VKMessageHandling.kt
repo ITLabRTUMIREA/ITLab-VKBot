@@ -72,12 +72,14 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
     private var keyboard = "{\"buttons\":[],\"one_time\":true}"
 
     private fun sendMessage(message: String) {
-        vk.messages()
-            .send(actor)
-            .userId(vkId)
-            .message(message)
-            .keyboard(keyboard)
-            .execute()
+        if(message.isNotEmpty()) {
+            vk.messages()
+                .send(actor)
+                .userId(vkId)
+                .message(message)
+                .keyboard(keyboard)
+                .execute()
+        }
     }
 
     private fun getKeyboardJson(): String {
@@ -132,32 +134,29 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                                     GlobalScope.launch { sendEmail() }
                                     "Поздравляем, ваша учетня запись прикреплена"
                                 }
-                                else -> "При добавлении вашей учетной записи произошла ошибка 1"
+                                else -> ""
                             }
 
                         }
 
                         //If the auth code (token) was entered incorrectly
-                        26 -> "Проверьте правильность написания кода"
+                        26 -> ""
 
                         //If there are any other errors
-                        else -> "При добавлении вашей учетной записи произошла ошибка 2"
+                        else -> ""
                     }
                 } else {
-                    "При добавлении вашей учетной записи произошла ошибка 3"
+                    ""
                 }
             } else {
                 //if the user has sent a non-template code message
-                message = "Если вы пытались прислать код для верификация, то вы сделали это как-то не так\n" +
-                        "Я не веду бесед с незнакомцами\n" +
-                        "Проверьте правильность написания кода"
+                message = ""
             }
         } else if (db.isUserInDBByVkId(vkId).get("result").asString == "unknown") {
 
             message = when (messageText.startsWith("L:")) {
-                true -> "Простите, на данный момент мы не можем вас авторизовать!\n" +
-                        "Повторите вашу попытку позже"
-                else -> "Я не понимаю, что вы хотели мне сказать."
+                true -> ""
+                else -> ""
             }
 
         } else {
