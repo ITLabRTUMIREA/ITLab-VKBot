@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory
 import java.lang.Exception
 
 
+
+
 /**
  *Class for work with database, config, vkApi(Getting users Ids, vkApi)
  * @param db database object
