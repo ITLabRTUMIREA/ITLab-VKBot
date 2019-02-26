@@ -126,38 +126,14 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                             )
                         ).get("statusCode").asInt
 
-                            //If person added then 1, else send message to user with error 1
-                            when (addingResult) {
-                                1 -> {
-                                    keyboard = getKeyboardJson()
-                                    GlobalScope.launch { sendEmail() }
-                                    "Поздравляем, ваша учетня запись прикреплена"
-                                }
-                                else -> "При добавлении вашей учетной записи произошла ошибка 1"
-                            }
-
+                        //If person added then 1
+                        if (addingResult == 1) {
+                            keyboard = getKeyboardJson()
+                            GlobalScope.launch { sendEmail() }
+                            message = "Поздравляем, ваша учетня запись прикреплена"
                         }
-
-                        //If the auth code (token) was entered incorrectly
-                        26 -> "Проверьте правильность написания кода"
-
-                        //If there are any other errors
-                        else -> "При добавлении вашей учетной записи произошла ошибка 2"
                     }
-                } else {
-                    "При добавлении вашей учетной записи произошла ошибка 3"
                 }
-            } else {
-                //if the user has sent a non-template code message
-                message = "Если вы пытались прислать код для верификация, то вы сделали это как-то не так\n" +
-                        "Я не веду бесед с незнакомцами\n" +
-                        "Проверьте правильность написания кода"
-            }
-
-            message = when (messageText.startsWith("L:")) {
-                true -> "Простите, на данный момент мы не можем вас авторизовать!\n" +
-                        "Повторите вашу попытку позже"
-                else -> "Я не понимаю, что вы хотели мне сказать."
             }
 
         } else {
