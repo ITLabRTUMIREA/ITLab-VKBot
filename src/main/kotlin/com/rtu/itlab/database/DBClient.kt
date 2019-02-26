@@ -442,6 +442,7 @@ class DBClient {
 
         if (isConnected()) {
             val response = isUserInDBByVkId(vkId)
+
             if (response.get("result").asBoolean) {
                 val userInfo = getUserInfoByKey(response.get(userJsonKey).asString).get("data").asJsonObject
                 resultJson.addProperty("vkNotice", userInfo.get("vkNotice").asBoolean)
@@ -449,7 +450,7 @@ class DBClient {
                 resultJson.addProperty("phoneNotice", userInfo.get("phoneNotice").asBoolean)
                 resultJson.addProperty("statusCode", 1)
             } else {
-                resultJson.addProperty("statusCode", response.get("statusCode").asString)
+                resultJson.addProperty("statusCode", 10)
             }
         } else {
             resultJson.addProperty("statusCode", 18)

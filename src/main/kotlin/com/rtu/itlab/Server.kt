@@ -42,12 +42,12 @@ fun Application.main() {
             val tmp: JsonObject? =
                 Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
             val config = Config().config!!
-            if (tmp!!.get("secret").asString == config.getString("group.secret")) {
+            if (config.hasPath("group.secret") && tmp!!.get("secret").asString == config.getString("group.secret")) {
                 if (!tmp.get("type").asString.matches(Regex("[0-9]*"))) {
 
                     when (tmp.get("type").asString) {
+
                         "confirmation" -> {
-                            val config = Config().config!!
                             call.respond(config.getString("server.response"))
                         }
                         "message_new" -> {
@@ -95,104 +95,17 @@ fun Application.main() {
                                     ).send()
                                 )
                             }
-
-                            else -> call.respondText { "Wrong type" }
                         }
+
                     } else {
                         call.respond("Error number of NotifyType")
                     }
                 }
             } else {
+                logger.error("Please, check group.secret in config")
                 call.respond("OK")
             }
         }
-
-//        post("/bot/db") {
-//            val tmp: JsonObject? =
-//                Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
-//
-//            when (tmp!!.get("type").asString) {
-//
-//                "disconnect" -> {
-//                    db.closeConnection()
-//                    val result = JsonObject()
-//                    result.addProperty("statusCode", 1)
-//                    logger.info("Disconnecting from database")
-//                    call.respond(result)
-//                }
-//
-//                "addPerson" -> {
-//                    call.respond(db.addPerson(tmp.getAsJsonObject("data")))
-//                }
-//
-//                "personUpdate" -> {
-//                    call.respond(db.updatePersonInfo(tmp.getAsJsonObject("data")))
-//                }
-//
-//                "addPersons" -> {
-//                    logger.info("Request for adding person.")
-//                    call.respond(
-//                        db.addPersons(
-//                            Gson().fromJson(
-//                                tmp.getAsJsonArray("data"),
-//                                Array<DBUser>::class.java
-//                            )
-//                        )
-//                    )
-//                }
-//
-//            }
-//        }
-//
-//        get("bot/db/persons/ispersonindbbyvkid/{vkid}") {
-//            call.respond(db.isUserInDBByVkId(call.parameters["vkid"]!!.toInt()))
-//        }
-//
-//        get("/bot/db/persons/get") {
-//            call.respond(db.getAllPersons())
-//        }
-//
-//        get("/bot/db/persons/mailnotice") {
-//            call.respond(db.getUsersMailsForEmailMailing())
-//        }
-//
-//        get("/bot/db/persons/phonenotice") {
-//            call.respond(db.getUsersPhonesForPhoneMailing())
-//        }
-//
-//        get("/bot/db/persons/vknotice") {
-//            call.respond(db.getUsersVkIdForVkMailing())
-//        }
-//
-//        get("/bot/db/person/{id}") {
-//            call.respond(db.getUserInfoByKey(call.parameters["id"]))
-//        }
-//
-//        get("/bot/db/dump") {
-//            call.respond(db.makeDump())
-//        }
-//
-//        get("/bot/keyboard/{vkId}") {
-//            call.respond(getKeyboardForCurrentPerson(call.parameters["vkId"]!!.toInt(), db).getKeyboardJson())
-//        }
-//
-//        delete("/bot/db/person/delete/{id}") {
-//            call.respond(db.deletePerson(call.parameters["id"]))
-//        }
-//
-//        delete("/bot/db/persons/delete") {
-//            call.respond(db.deleteAllPersons())
-//        }
-//
-//        get("/bot/db/connect") {
-//            call.respond(db.loadConfigAndConnect())
-//        }
-//
-//        get("/bot/db/isconnected") {
-//            val result = JsonObject()
-//            result.addProperty("connection", db.isConnected())
-//            call.respond(result)
-//        }
 
     }
 }
