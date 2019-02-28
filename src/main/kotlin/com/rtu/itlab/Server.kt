@@ -2,9 +2,7 @@ package com.rtu.itlab
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.rtu.itlab.bot.keyboard.getKeyboardForCurrentPerson
 import com.rtu.itlab.database.DBClient
-import com.rtu.itlab.database.DBUser
 import com.rtu.itlab.responses.VKMessageHandling
 import com.rtu.itlab.responses.event.*
 import com.rtu.itlab.responses.event.models.EventView
@@ -15,7 +13,6 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.gson.*
 import io.ktor.request.receiveStream
 import io.ktor.response.respond
-import io.ktor.response.respondText
 import io.ktor.routing.*
 import java.io.InputStreamReader
 import org.slf4j.LoggerFactory
@@ -42,7 +39,10 @@ fun Application.main() {
             val tmp: JsonObject? =
                 Gson().fromJson(InputStreamReader(call.receiveStream(), "UTF-8"), JsonObject::class.java)
             val config = Config().config!!
-            if (config.hasPath("group.secret") && tmp!!.get("secret").asString == config.getString("group.secret")) {
+            if (config.hasPath("group.secret") && tmp!!.has("secret") && tmp.get("secret").asString == config.getString(
+                    "group.secret"
+                )
+            ) {
                 if (!tmp.get("type").asString.matches(Regex("[0-9]*"))) {
 
                     when (tmp.get("type").asString) {
@@ -102,10 +102,9 @@ fun Application.main() {
                     }
                 }
             } else {
-                logger.error("Please, check group.secret in config")
+                logger.error("Please, check group.secret in config. Or secret in request is invalid")
                 call.respond("OK")
             }
         }
-
     }
 }

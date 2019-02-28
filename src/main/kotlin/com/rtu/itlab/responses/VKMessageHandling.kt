@@ -130,7 +130,7 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                         if (addingResult == 1) {
                             keyboard = getKeyboardJson()
                             GlobalScope.launch { sendEmail() }
-                            message = "Поздравляем, ваша учетня запись прикреплена"
+                            message = "Поздравляем, ваша учетная запись прикреплена"
                         }
                     }
                 }
