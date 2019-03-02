@@ -6,6 +6,7 @@ import com.rtu.itlab.responses.event.models.endTime
 import com.rtu.itlab.responses.event.models.targetParticipantsCount
 import com.rtu.itlab.utils.Config
 import java.text.SimpleDateFormat
+import java.util.*
 
 class NotifyMessages {
 
@@ -20,7 +21,7 @@ class Event : Builder() {
     /**
      * 1
      */
-    fun toName(name: String): Event {
+    fun toName(name: String?): Event {
         return when (name.isNullOrEmpty()) {
             false -> addParams("user_name", name) as Event
             else -> this
@@ -48,14 +49,14 @@ class Event : Builder() {
      * 4
      */
     fun eventInfo(eventView: EventView): Event {
-
         val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy, HH:mm")
-
+        dateFormat.timeZone = TimeZone.getTimeZone("Europe/Moscow")
         val text = "Необходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                "\nНачало: ${dateFormat.format(eventView.beginTime().time)}" +
-                "\nОкончание: ${dateFormat.format(eventView.endTime().time)}" +
+                "\nНачало: ${dateFormat.format(eventView.beginTime().time)} по МСК" +
+                "\nОкончание: ${dateFormat.format(eventView.endTime().time)} по МСК" +
                 "\nАдрес проведения мероприятия: ${eventView.address}"
 
+        println(text)
         return addParams("event_info", text) as Event
     }
 
