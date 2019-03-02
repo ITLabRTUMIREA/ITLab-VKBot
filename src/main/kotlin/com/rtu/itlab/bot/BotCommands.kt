@@ -10,6 +10,7 @@ enum class BotCommands(val commandText: String) {
     SubscribeEmail("подписаться на email рассылку"),
     SubscribeVk("подписаться на vk рассылку"),
     SubscribePhone("подписаться на phone рассылку"),
+    DeleteFromNotifyCenter("отвязать мои аккаунты от рассылок"),
     Help("/help");
 
     companion object {

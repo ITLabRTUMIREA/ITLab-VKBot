@@ -1,9 +1,7 @@
 package com.rtu.itlab.responses
 
 import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.fuel.gson.responseObject
-import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.rtu.itlab.bot.BotCommands
@@ -72,12 +70,15 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
     private var keyboard = "{\"buttons\":[],\"one_time\":true}"
 
     private fun sendMessage(message: String) {
-        vk.messages()
-            .send(actor)
-            .userId(vkId)
-            .message(message)
-            .keyboard(keyboard)
-            .execute()
+        if (message.isNotBlank()) {
+            vk.messages()
+                .send(actor)
+                .userId(vkId)
+                .message(message)
+                .keyboard(keyboard)
+                .execute()
+
+        }
     }
 
     private fun getKeyboardJson(): String {
@@ -85,15 +86,16 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
         val keyboardClass = getKeyboardForCurrentPerson(vkId, db!!)
         if (keyboardClass.lines.size > 0)
             result = keyboardClass.getKeyboardJson().toString()
-        return result
+        return if (result.isNotBlank())
+            result
+        else
+            "{\"buttons\":[],\"one_time\":true}"
     }
 
 
     override fun send(): JsonObject {
-        val message: String
-
+        var message = ""
         if (db!!.isUserInDBByVkId(vkId).get("result").asString != "true") {
-
             if (messageText.startsWith("L:")) {
                 var responseObject: ServerResponseJson? = null
                 try {
@@ -107,63 +109,37 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                     if (result.component2() == null && result.get().data != null)
                         responseObject = result.get()
                     else
-                        logger.error("Fuel error")
+                        logger.error("Fuel error (Returned null from server)")
 
                 } catch (ex: Exception) {
-                    logger.error(ex.message + " HERE")
+                    logger.error(ex.message)
                 }
 
-                message = if (responseObject != null) {
-                    when (responseObject.statusCode) {
-                        1 -> {
-                            //Getting result of adding person to database
-                            val addingResult = db.addPerson(
-                                responseObject.data!!.copy(
-                                    vkId = vkId.toString(), vkNotice = true,
-                                    emailNotice = true, phoneNotice = true
-                                )
-                            ).get("statusCode").asInt
+                if (responseObject != null) {
+                    if (responseObject.statusCode == 1) {
 
+                        //Getting result of adding person to database
+                        val addingResult = db.addPerson(
+                            responseObject.data!!.copy(
+                                vkId = vkId.toString(), vkNotice = true,
+                                emailNotice = true, phoneNotice = true
+                            )
+                        ).get("statusCode").asInt
 
-                            //If person added then 1, else send message to user with error 1
-                            when (addingResult) {
-                                1 -> {
-                                    keyboard = getKeyboardJson()
-                                    GlobalScope.launch { sendEmail() }
-                                    "Поздравляем, ваша учетня запись прикреплена"
-                                }
-                                else -> "При добавлении вашей учетной записи произошла ошибка 1"
-                            }
-
+                        //If person added then 1
+                        if (addingResult == 1) {
+                            keyboard = getKeyboardJson()
+                            GlobalScope.launch { sendEmail() }
+                            message = "Поздравляем, ваша учетная запись прикреплена"
                         }
-
-                        //If the auth code (token) was entered incorrectly
-                        26 -> "Проверьте правильность написания кода"
-
-                        //If there are any other errors
-                        else -> "При добавлении вашей учетной записи произошла ошибка 2"
                     }
-                } else {
-                    "При добавлении вашей учетной записи произошла ошибка 3"
                 }
-            } else {
-                //if the user has sent a non-template code message
-                message = "Если вы пытались прислать код для верификация, то вы сделали это как-то не так\n" +
-                        "Я не веду бесед с незнакомцами\n" +
-                        "Проверьте правильность написания кода"
-            }
-        } else if (db.isUserInDBByVkId(vkId).get("result").asString == "unknown") {
-
-            message = when (messageText.startsWith("L:")) {
-                true -> "Простите, на данный момент мы не можем вас авторизовать!\n" +
-                        "Повторите вашу попытку позже"
-                else -> "Я не понимаю, что вы хотели мне сказать."
             }
 
         } else {
+
             //If user already authorized in the system
             if (messageText.startsWith("L:")) {
-
                 message = "Ранее вы уже были авторизованы!"
             } else {
                 message = when (BotCommands.getEnumClassByCommandText(messageText)) {
@@ -179,6 +155,8 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
                     BotCommands.SubscribeVk -> subscribe("vk")
 
                     BotCommands.SubscribePhone -> subscribe("phone")
+
+                    BotCommands.DeleteFromNotifyCenter -> deleteFromNotify()
 
                     BotCommands.Help -> {
                         var result = "Возможные комманды:\n"
@@ -199,6 +177,16 @@ class VKMessageHandling(tmp: JsonObject?, db: DBClient) : ResponseHandler(db) {
         sendMessage(message)
 
         return resultJson
+    }
+
+    private fun deleteFromNotify(): String {
+        val userId = db!!.isUserInDBByVkId(vkId).get("id").asString
+        val result = db.deletePerson(userId).get("statusCode").asInt
+        return if (result == 1) {
+            "Все ваши аккаунты отвязаны и удалены из рассылки"
+        } else {
+            "Произошла ошибка отвязки/удаления аккаунта statusCode = ${result}"
+        }
     }
 
     private fun unSubscribe(typeNotice: String): String {
