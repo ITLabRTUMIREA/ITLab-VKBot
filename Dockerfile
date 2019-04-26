@@ -13,6 +13,7 @@ ENV SERVICE_JAR ItLabMirea-1.0-SNAPSHOT.jar
 RUN mkdir -p ${SERVICE_DIR}
 WORKDIR ${SERVICE_DIR}
 COPY --from=builder ${SERVICE_DIR}/target/${SERVICE_JAR} .
+COPY src/htmlPageForEmail/notification.html src/htmlPageForEmail/notification.html
 CMD java ${JAVA_OPTS} \
     -server -Xms128m -Xmx128m \
     -Djava.security.egd=file:/dev/./urandom \
