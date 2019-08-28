@@ -6,10 +6,8 @@ package com.rtu.itlab.bot
 enum class BotCommands(val commandText: String) {
     UnSubscribeVk("отписаться от vk рассылки"),
     UnSubscribeEmail("отписаться от email рассылки"),
-    UnSubscribePhone("отписаться от phone рассылки"),
     SubscribeEmail("подписаться на email рассылку"),
     SubscribeVk("подписаться на vk рассылку"),
-    SubscribePhone("подписаться на phone рассылку"),
     DeleteFromNotifyCenter("отвязать мои аккаунты от рассылок"),
     Help("/help");
 

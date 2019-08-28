@@ -13,6 +13,7 @@ abstract class Handler {
     val vk = VkApiClient(transportClient)
     var actor: GroupActor? = null
     private val logger = LoggerFactory.getLogger(this.javaClass.name)
+
     init {
         val groupId = Config().loadPath("group.id")?.toInt()
         val groupAccessToken = Config().loadPath("group.accessToken")

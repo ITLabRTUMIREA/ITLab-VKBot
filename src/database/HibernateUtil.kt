@@ -104,11 +104,11 @@ class HibernateUtil {
 
     /**
      * Delete entity(ies) from table by id
-     * @param id id of entity, default = 0 -> all entities
+     * @param id id of entity, default = null -> all entities
      * @param classRef  class reference T
      * @return boolean value: true if deleted else false
      */
-    fun <T : Any> deleteEntities(id: Int = 0, classRef: T): Boolean {
+    fun <T : Any> deleteEntities(id: String? = null, classRef: T): Boolean {
         var session: Session? = null
 
         if (sessionFactory == null || sessionFactory!!.isClosed)
@@ -117,7 +117,7 @@ class HibernateUtil {
         return try {
             session = sessionFactory!!.openSession()
             session.beginTransaction()
-            if (id != 0) {
+            if (!id.isNullOrBlank()) {
                 session.delete(session.get(classRef::class.java, id))
             } else {
                 getEntities(classRef)?.forEach {

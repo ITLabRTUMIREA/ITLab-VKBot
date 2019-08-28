@@ -89,9 +89,13 @@ class RequestsToServerApi {
                             null
                     }
                     is Result.Success -> {
-                        val response = result.get()[0]
-                        logger.info("User (${response.id}) data received")
-                        response
+                        if(result.get().isNotEmpty()) {
+                            val response = result.get()[0]
+                            logger.info("User (${response.id}) data received")
+                            response
+                        }else{
+                            null
+                        }
                     }
                 }
             } else {
