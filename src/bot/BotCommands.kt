@@ -1,4 +1,4 @@
-package com.rtu.itlab.bot
+package bot
 
 /**
  * A class that contains commands that a bot can execute

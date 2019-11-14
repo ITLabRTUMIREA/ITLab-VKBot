@@ -1,8 +1,8 @@
 package bot.keyboard
 
+import bot.BotCommands
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.rtu.itlab.bot.BotCommands
 import bot.keyboard.properties.Color
 import com.vk.api.sdk.queries.messages.MessagesSendQuery
 import com.vk.api.sdk.queries.messages.MessagesSendWithUserIdsQuery
@@ -115,7 +115,7 @@ fun getKeyboardForCurrentPerson(
             else
                 keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.GREEN)
 
-            if (user.emailNotication)
+            if (user.emailNotification)
                 keyboardButtons.createButton(BotCommands.UnSubscribeEmail.commandText, Color.RED)
             else
                 keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.GREEN)

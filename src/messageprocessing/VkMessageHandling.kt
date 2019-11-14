@@ -3,12 +3,12 @@ package messageprocessing
 import bot.keyboard.getKeyboardForCurrentPerson
 import bot.keyboard.keyboard
 import com.google.gson.JsonObject
-import com.rtu.itlab.bot.BotCommands
+import bot.BotCommands
 import database.HibernateUtil
 import database.schema.NotificationsEntity
 import emailsender.*
-
 import org.slf4j.LoggerFactory
+import responses.event.Event
 import utils.Config
 import workwithapi.RequestsToServerApi
 
@@ -24,7 +24,7 @@ class VKMessageHandling : Handler() {
 
     private val requestsToServerApi = RequestsToServerApi()
 
-    override fun sendEmail() {
+    override fun sendEmail(destinationEmails: Set<String>, event: Event) {
         val html = HtmlEmail()
 
         when (val apiUrl = Config().loadPath("apiserver.host")) {
@@ -40,20 +40,30 @@ class VKMessageHandling : Handler() {
 
         html.changeTitle("Уведомление об успешном подключении системы уведомлений")
 
-        if (html.getHtmlString().isNotBlank()) {
+        val emailConfiguration = loadConfigurationsForEmail()
 
-            sendMail(
-                UserMail(Config().loadPath("mail.email"), Config().loadPath("mail.password")),
-                MailMessage(
-                    "RTUITLAB NOTIFICATION",
-                    html.getHtmlString().replace("Перейти к событию", "Перейти на сайт")
-                ),
-                HostMail(Config().loadPath("mail.port"), Config().loadPath("mail.host")),
-                setOf(email!!)
-            )
+        if (emailConfiguration.email != null && emailConfiguration.password != null &&
+            emailConfiguration.subject != null && emailConfiguration.port != null &&
+            emailConfiguration.host != null
+        ) {
+
+            if (html.getHtmlString().isNotBlank()) {
+
+                sendMail(
+                    UserMail(emailConfiguration.email, emailConfiguration.password),
+                    MailMessage(
+                        emailConfiguration.subject,
+                        html.getHtmlString().replace("Перейти к событию", "Перейти на сайт")
+                    ),
+                    HostMail(emailConfiguration.port, emailConfiguration.host),
+                    destinationEmails
+                )
+            } else {
+                logger.error("Html is empty or blank. Can't send message to users!")
+            }
 
         } else {
-            logger.error("Html is empty or blank. Can't send message to users!")
+            logger.error("Check mail.email, mail.password, mail.subject, mail.port, mail.host in config file")
         }
     }
 
@@ -83,7 +93,7 @@ class VKMessageHandling : Handler() {
             "{\"buttons\":[],\"one_time\":true}"
     }
 
-    override fun process(inputJson: JsonObject, databaseConnection: HibernateUtil) {
+    override fun process(inputJson: JsonObject, databaseConnection: HibernateUtil, event: Event?) {
 
         val vkId = inputJson.getAsJsonObject("object").get("from_id").asString
         val messageText = inputJson.getAsJsonObject("object").get("text").asString
@@ -109,7 +119,6 @@ class VKMessageHandling : Handler() {
                         BotCommands.UnSubscribeEmail -> unSubscribe("email", databaseConnection)
 
                         BotCommands.UnSubscribeVk -> unSubscribe("vk", databaseConnection)
-
 
                         BotCommands.SubscribeEmail -> subscribe("email", databaseConnection)
 
@@ -140,9 +149,9 @@ class VKMessageHandling : Handler() {
                     if (userModel != null) {
                         databaseConnection.addEntity(
                             NotificationsEntity(
-                                userModel.id,
+                                id = userModel.id,
                                 vkNotification = true,
-                                emailNotication = true
+                                emailNotification = true
                             )
                         )
                     } else {
@@ -187,7 +196,7 @@ class VKMessageHandling : Handler() {
                         NotificationsEntity(
                             id,
                             vkNotification = true,
-                            emailNotication = true
+                            emailNotification = true
                         )
                     )
                     if (res) {
@@ -221,7 +230,8 @@ class VKMessageHandling : Handler() {
 
     private fun deleteFromNotify(databaseConnection: HibernateUtil): String {
         return if (!id.isNullOrBlank() &&
-            databaseConnection.deleteEntities(id!!, NotificationsEntity())) {
+            databaseConnection.deleteEntities(id!!, NotificationsEntity())
+        ) {
             "Ваши эксклюзивные данные были удалины из базы данных данного сервиса"
         } else {
             "Произошла ошибка отвязки вашего аккаунта от данного сервиса"
@@ -242,7 +252,7 @@ class VKMessageHandling : Handler() {
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotication = false)
+                    val newPersonInfo = personInfo.copy(emailNotification = false)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 else -> false
@@ -270,7 +280,7 @@ class VKMessageHandling : Handler() {
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotication = true)
+                    val newPersonInfo = personInfo.copy(emailNotification = true)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 else -> false

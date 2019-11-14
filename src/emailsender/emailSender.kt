@@ -20,7 +20,6 @@ private val logger = LoggerFactory.getLogger("emailSender")
  * @param host email host address
  * @return List with lines of file
  */
-
 fun sendMail(
     userMail: String?, password: String?, messageSubject: String? = "", messageContent: String? = "",
     receivers: Set<String>?, from: String? = userMail, port: String? = "465", host: String? = "smtp.gmail.com"
