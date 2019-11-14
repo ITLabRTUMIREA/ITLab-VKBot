@@ -8,7 +8,8 @@ import database.HibernateUtil
 import database.models.UserModel
 import emailsender.*
 import org.slf4j.LoggerFactory
-import responses.event.Event
+import messageprocessing.responses.event.Event
+import messageprocessing.responses.event.EventView
 import utils.Config
 
 abstract class Handler {
@@ -29,11 +30,13 @@ abstract class Handler {
 
     }
 
-    open fun process(inputJson: JsonObject, databaseConnection: HibernateUtil, event: Event? = null) {}
+    open fun process(inputJson: JsonObject? = null, databaseConnection: HibernateUtil, event: Event? = null) {}
+
+    open fun process(eventView: EventView, databaseConnection: HibernateUtil){}
 
     open fun process(invitedUser: UserModel, databaseConnection: HibernateUtil? = null, event: Event? = null) {}
 
-    //open fun process(invitedUsers: List<Int>, databaseConnection: HibernateUtil, responses.event: Event? = null) {}
+    //open fun process(invitedUsers: List<Int>, databaseConnection: HibernateUtil, messageprocessing.responses.event: Event? = null) {}
 
     open fun getVkId(user: UserModel): Int? {
         for (it in user.properties) {

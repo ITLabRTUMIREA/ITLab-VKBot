@@ -8,7 +8,7 @@ import database.HibernateUtil
 import database.schema.NotificationsEntity
 import emailsender.*
 import org.slf4j.LoggerFactory
-import responses.event.Event
+import messageprocessing.responses.event.Event
 import utils.Config
 import workwithapi.RequestsToServerApi
 

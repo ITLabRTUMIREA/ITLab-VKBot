@@ -78,6 +78,6 @@ dependencies {
     }
 
     implementation("com.konghq:unirest-java:$unirestjava_version")
-
+    implementation("redis.clients:jedis:$jedis_version")
     testCompile "io.ktor:ktor-server-tests:$ktor_version"
 }

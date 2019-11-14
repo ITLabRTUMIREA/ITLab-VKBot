@@ -1,4 +1,0 @@
-package responses
-
-class EventNew {
-}
