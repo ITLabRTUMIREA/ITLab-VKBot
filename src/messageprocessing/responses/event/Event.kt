@@ -1,4 +1,4 @@
-package responses.event
+package messageprocessing.responses.event
 
 import utils.Config
 import java.text.SimpleDateFormat
@@ -86,7 +86,7 @@ class Event : Builder() {
     fun addUrl(eventView: EventView): Event {
         return addParams(
             "event_url",
-            "Ссылка на событие: ${Config().loadPath("frontend.host")}/events/${eventView.data.id}"
+            "Ссылка на событие: ${Config().loadPath("apiserver.host")}/events/${eventView.data.id}"
         ) as Event
     }
 

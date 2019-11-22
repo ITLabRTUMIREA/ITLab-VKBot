@@ -12,6 +12,7 @@ import database.models.UserModelForAuth
 import utils.Config
 import kong.unirest.Unirest
 import com.google.gson.JsonObject
+import messageprocessing.responses.event.DataView
 
 class RequestsToServerApi {
 
@@ -58,8 +59,63 @@ class RequestsToServerApi {
         }
     }
 
+    fun getEventById(eventId: String): DataView? {
+        return if (!accessToken.isNullOrBlank()) {
+            apiUrl = Config().loadPath("apiserver.host")
+            if (!apiUrl.isNullOrBlank()) {
+                val (_, _, result) = "$apiUrl/api/Event/$eventId"
+                    .httpGet()
+                    .header(
+                        "Content-Type" to "application/json",
+                        "Authorization" to "Bearer $accessToken"
+                    )
+                    .responseObject<DataView>()
+
+                when (result) {
+                    is Result.Failure -> {
+                        val ex = result.getException().message
+                        logger.error(ex)
+                        if (ex.equals("HTTP Exception 401 Unauthorized")) {
+                            if (requestCount == 0) {
+                                requestCount++
+                                updateToken()
+                                val response = getEventById(eventId)
+                                requestCount = 0
+                                response
+                            } else {
+                                null
+                            }
+                        } else
+                            null
+                    }
+                    is Result.Success -> {
+
+                        val response = result.get()
+                        logger.info("User (${response.id}) data received")
+                        response
+
+                    }
+                }
+            } else {
+                logger.error("Can't load from config path apiserver.host, value is null or blank.")
+                null
+            }
+        } else {
+            logger.error("AccessToken is null")
+            if (requestCount == 0) {
+                requestCount++
+                updateToken()
+                val result = getEventById(eventId)
+                requestCount = 0
+                result
+            } else {
+                null
+            }
+        }
+    }
+
     fun getUserModelByVkId(vkId: String): UserModel? {
-        println(accessToken)
+        //println(accessToken)
         return if (!accessToken.isNullOrBlank()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -89,11 +145,11 @@ class RequestsToServerApi {
                             null
                     }
                     is Result.Success -> {
-                        if(result.get().isNotEmpty()) {
+                        if (result.get().isNotEmpty()) {
                             val response = result.get()[0]
                             logger.info("User (${response.id}) data received")
                             response
-                        }else{
+                        } else {
                             null
                         }
                     }
@@ -108,6 +164,63 @@ class RequestsToServerApi {
                 requestCount++
                 updateToken()
                 val result = getUserModelByVkId(vkId)
+                requestCount = 0
+                result
+            } else {
+                null
+            }
+        }
+    }
+
+    fun getUsers(): List<User>? {
+        return if (!accessToken.isNullOrBlank()) {
+            apiUrl = Config().loadPath("apiserver.host")
+            if (!apiUrl.isNullOrBlank()) {
+                val (_, _, result) = "$apiUrl/api/User?count=100"
+                    .httpGet()
+                    .header(
+                        "Content-Type" to "application/json",
+                        "Authorization" to "Bearer $accessToken"
+                    )
+                    .responseObject<List<User>>()
+
+                when (result) {
+                    is Result.Failure -> {
+                        val ex = result.getException().message
+                        logger.error(ex)
+                        if (ex.equals("HTTP Exception 401 Unauthorized")) {
+                            if (requestCount == 0) {
+                                requestCount++
+                                updateToken()
+                                val response = getUsers()
+                                requestCount = 0
+                                response
+                            } else {
+                                null
+                            }
+                        } else
+                            null
+                    }
+                    is Result.Success -> {
+                        if (result.get().isNotEmpty()) {
+                            val response = result.get()
+                            logger.info("Users data received")
+                            response
+                        } else {
+                            null
+                        }
+                    }
+                }
+            } else {
+                logger.error("Can't load from config path apiserver.host, value is null or blank.")
+                null
+            }
+        } else {
+            logger.error("AccessToken is null")
+            if (requestCount == 0) {
+                requestCount++
+                updateToken()
+                val result = getUsers()
                 requestCount = 0
                 result
             } else {

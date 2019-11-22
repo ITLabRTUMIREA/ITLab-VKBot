@@ -7,25 +7,44 @@ import redis.clients.jedis.JedisPubSub
 import utils.Config
 import java.lang.Exception
 import com.google.gson.Gson
+import database.HibernateUtil
+import messageprocessing.responses.EventChange
+import messageprocessing.responses.EventNew
 import messageprocessing.responses.event.EventView
 import messageprocessing.responses.event.NotifyType
+import workwithapi.RequestsToServerApi
+import kotlin.concurrent.thread
 
 
-class RedisListener {
+class RedisListener(
+    private val databaseConnection: HibernateUtil,
+    private val requestsToServerApi: RequestsToServerApi
+) {
     var jedis: Jedis? = null
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     fun eventHandling(eventView: EventView) {
-        when (NotifyType.values()[eventView.type]){
-            NotifyType.EventNew ->{
+        when (NotifyType.values()[eventView.type]) {
+            NotifyType.EventNew -> {
                 logger.info("New Event Notification Request")
-
+                thread {
+                    EventNew(eventView).process(
+                        requestsToServerApi = requestsToServerApi,
+                        databaseConnection = databaseConnection
+                    )
+                }
             }
-            NotifyType.EventChange ->{
+            NotifyType.EventChange -> {
                 logger.info("Modified Event Notification Request")
+                thread {
+                    EventChange(eventView).process(
+                        requestsToServerApi = requestsToServerApi,
+                        databaseConnection = databaseConnection
+                    )
+                }
 
             }
-            NotifyType.EventConfirm ->{
+            NotifyType.EventConfirm -> {
                 logger.info("Request for notification of participation in the event")
 
             }
@@ -46,7 +65,7 @@ class RedisListener {
                 val chanelName = Config().loadPath("database.redis.chanel")
                 val jedisPubSub = object : JedisPubSub() {
                     override fun onMessage(channel: String, message: String?) {
-                        println("Channel $channel has sent a message : $message")
+                        println("Channel $channel has sent a message")
                         if (!chanelName.isNullOrEmpty() && chanelName == chanel && !message.isNullOrEmpty()) {
                             val eventView = Gson().fromJson(message, EventView::class.java)
                             eventHandling(eventView)

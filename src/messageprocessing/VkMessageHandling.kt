@@ -12,7 +12,7 @@ import messageprocessing.responses.event.Event
 import utils.Config
 import workwithapi.RequestsToServerApi
 
-class VKMessageHandling : Handler() {
+class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : Handler() {
 
     private val logger = LoggerFactory.getLogger(this.javaClass.name)
 
@@ -22,7 +22,7 @@ class VKMessageHandling : Handler() {
 
     private var keyboard = "{\"buttons\":[],\"one_time\":true}"
 
-    private val requestsToServerApi = RequestsToServerApi()
+
 
     override fun sendEmail(destinationEmails: Set<String>, event: Event) {
         val html = HtmlEmail()
@@ -67,8 +67,8 @@ class VKMessageHandling : Handler() {
         }
     }
 
-    private fun sendMessage(message: String, vkId: String) {
-        if (message.isNotBlank()) {
+    private fun sendMessage(message: String?, vkId: String?) {
+        if (!message.isNullOrEmpty() && !vkId.isNullOrEmpty()) {
             vk.messages()
                 .send(actor)
                 .userId(vkId.toInt())
@@ -93,14 +93,17 @@ class VKMessageHandling : Handler() {
             "{\"buttons\":[],\"one_time\":true}"
     }
 
-    override fun process(inputJson: JsonObject, databaseConnection: HibernateUtil, event: Event?) {
+    override fun process(inputJson: JsonObject?, databaseConnection: HibernateUtil) {
 
-        val vkId = inputJson.getAsJsonObject("object").get("from_id").asString
-        val messageText = inputJson.getAsJsonObject("object").get("text").asString
+        val vkId = inputJson?.getAsJsonObject("object")?.get("from_id")?.asString
+        val messageText = inputJson?.getAsJsonObject("object")?.get("text")?.asString
 
-        var userModel = requestsToServerApi.getUserModelByVkId(vkId)
+        var userModel = if (!vkId.isNullOrEmpty())
+            requestsToServerApi.getUserModelByVkId(vkId)
+        else
+            null
 
-        val message = if (userModel != null) {
+        val message = if (userModel != null && !messageText.isNullOrEmpty() && !vkId.isNullOrEmpty()) {
             id = userModel.id
             email = userModel.email
 
@@ -182,9 +185,9 @@ class VKMessageHandling : Handler() {
                                 " кому-нибудь, кто возмжно знает решение проблемы"
                 }
             }
-        } else {
+        } else if (!messageText.isNullOrEmpty()) {
             if (messageText.startsWith("L:")) {
-                userModel = requestsToServerApi.sendTokenToServerForAccess(messageText, vkId)
+                userModel = requestsToServerApi.sendTokenToServerForAccess(messageText, vkId!!)
 
                 if (userModel != null) {
                     id = userModel.id
@@ -224,6 +227,8 @@ class VKMessageHandling : Handler() {
                 "Ранее вы не были авторизованы в данном сервисе, " +
                         "а я не понимаю, что мне пишут незнакомцы."
             }
+        } else {
+            null
         }
         sendMessage(message, vkId)
     }
@@ -286,7 +291,7 @@ class VKMessageHandling : Handler() {
                 else -> false
             }
             if (result)
-                "Вы успешно отписаны от $typeNotice рассылки!"
+                "Вы успешно подписаны на $typeNotice рассылки!"
             else
                 "Произошла ошибка при обновлении ваших данных при отписке от $typeNotice рассылки"
         } else

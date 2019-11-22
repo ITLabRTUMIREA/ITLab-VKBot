@@ -1,0 +1,37 @@
+{
+  "id": "a50fe29a-4966-4ed9-49de-08d76926bc66",
+  "title": "test2",
+  "address": "qwrqr",
+  "shifts": [
+    {
+      "beginTime": "Nov 19, 2019, 3:00:00 PM",
+      "endTime": "Nov 19, 2019, 3:00:00 PM",
+      "places": [
+        {
+          "targetParticipantsCount": 1,
+          "invited": [
+            {
+              "user": {
+                "id": "d3ea79a4-1f51-4633-30ab-08d75b7903fc",
+                "firstName": "Tester",
+                "lastName": "Testerov",
+                "phoneNumber": "+79161853166",
+                "email": "test@gmail.com",
+                "properties": [
+                  {
+                    "value": "52495468",
+                    "status": "Confirmed",
+                    "userPropertyType": {
+                      "id": "ff779472-f754-438e-d54e-08d63e82f7bc",
+                      "title": "VKID"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

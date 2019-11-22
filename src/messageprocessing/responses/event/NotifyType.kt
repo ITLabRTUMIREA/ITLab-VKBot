@@ -1,4 +1,4 @@
-package responses.event
+package messageprocessing.responses.event
 
 enum class NotifyType(val type: Int) {
     EventNew(0),
