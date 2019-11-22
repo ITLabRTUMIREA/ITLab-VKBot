@@ -9,6 +9,7 @@ import java.lang.Exception
 import com.google.gson.Gson
 import database.HibernateUtil
 import messageprocessing.responses.EventChange
+import messageprocessing.responses.EventConfirm
 import messageprocessing.responses.EventNew
 import messageprocessing.responses.event.EventView
 import messageprocessing.responses.event.NotifyType
@@ -46,7 +47,12 @@ class RedisListener(
             }
             NotifyType.EventConfirm -> {
                 logger.info("Request for notification of participation in the event")
-
+                thread {
+                    EventConfirm(eventView).process(
+                        requestsToServerApi = requestsToServerApi,
+                        databaseConnection = databaseConnection
+                    )
+                }
             }
         }
     }
@@ -65,7 +71,7 @@ class RedisListener(
                 val chanelName = Config().loadPath("database.redis.chanel")
                 val jedisPubSub = object : JedisPubSub() {
                     override fun onMessage(channel: String, message: String?) {
-                        println("Channel $channel has sent a message")
+                        println("Channel $channel has sent a message $message")
                         if (!chanelName.isNullOrEmpty() && chanelName == chanel && !message.isNullOrEmpty()) {
                             val eventView = Gson().fromJson(message, EventView::class.java)
                             eventHandling(eventView)
@@ -93,5 +99,6 @@ class RedisListener(
         }
 
     }
+
 
 }
