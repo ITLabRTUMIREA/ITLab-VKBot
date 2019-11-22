@@ -1,6 +1,6 @@
 package database.models
 
-data class UserModel(val id: String, val email: String,val properties: List<Property>)
+data class UserModel(val id: String, val email: String, val properties: List<Property>)
 
 data class Property(
     val value: String,
@@ -8,4 +8,4 @@ data class Property(
     val userPropertyType: UserPropertyType
 )
 
-data class UserPropertyType(val name: String)
+data class UserPropertyType(val title: String)

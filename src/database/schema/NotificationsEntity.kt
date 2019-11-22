@@ -14,7 +14,7 @@ data class NotificationsEntity(
     val vkNotification: Boolean = false,
 
     @Basic
-    @Column(name = "email_notication")
-    val emailNotication: Boolean = false
+    @Column(name = "email_notification")
+    val emailNotification: Boolean = false
 
 )

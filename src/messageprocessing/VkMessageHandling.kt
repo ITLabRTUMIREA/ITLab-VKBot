@@ -3,16 +3,16 @@ package messageprocessing
 import bot.keyboard.getKeyboardForCurrentPerson
 import bot.keyboard.keyboard
 import com.google.gson.JsonObject
-import com.rtu.itlab.bot.BotCommands
+import bot.BotCommands
 import database.HibernateUtil
 import database.schema.NotificationsEntity
 import emailsender.*
-
 import org.slf4j.LoggerFactory
+import messageprocessing.responses.event.Event
 import utils.Config
 import workwithapi.RequestsToServerApi
 
-class VKMessageHandling : Handler() {
+class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : Handler() {
 
     private val logger = LoggerFactory.getLogger(this.javaClass.name)
 
@@ -22,9 +22,9 @@ class VKMessageHandling : Handler() {
 
     private var keyboard = "{\"buttons\":[],\"one_time\":true}"
 
-    private val requestsToServerApi = RequestsToServerApi()
 
-    override fun sendEmail() {
+
+    override fun sendEmail(destinationEmails: Set<String>, event: Event) {
         val html = HtmlEmail()
 
         when (val apiUrl = Config().loadPath("apiserver.host")) {
@@ -40,25 +40,35 @@ class VKMessageHandling : Handler() {
 
         html.changeTitle("Уведомление об успешном подключении системы уведомлений")
 
-        if (html.getHtmlString().isNotBlank()) {
+        val emailConfiguration = loadConfigurationsForEmail()
 
-            sendMail(
-                UserMail(Config().loadPath("mail.email"), Config().loadPath("mail.password")),
-                MailMessage(
-                    "RTUITLAB NOTIFICATION",
-                    html.getHtmlString().replace("Перейти к событию", "Перейти на сайт")
-                ),
-                HostMail(Config().loadPath("mail.port"), Config().loadPath("mail.host")),
-                setOf(email!!)
-            )
+        if (emailConfiguration.email != null && emailConfiguration.password != null &&
+            emailConfiguration.subject != null && emailConfiguration.port != null &&
+            emailConfiguration.host != null
+        ) {
+
+            if (html.getHtmlString().isNotBlank()) {
+
+                sendMail(
+                    UserMail(emailConfiguration.email, emailConfiguration.password),
+                    MailMessage(
+                        emailConfiguration.subject,
+                        html.getHtmlString().replace("Перейти к событию", "Перейти на сайт")
+                    ),
+                    HostMail(emailConfiguration.port, emailConfiguration.host),
+                    destinationEmails
+                )
+            } else {
+                logger.error("Html is empty or blank. Can't send message to users!")
+            }
 
         } else {
-            logger.error("Html is empty or blank. Can't send message to users!")
+            logger.error("Check mail.email, mail.password, mail.subject, mail.port, mail.host in config file")
         }
     }
 
-    private fun sendMessage(message: String, vkId: String) {
-        if (message.isNotBlank()) {
+    private fun sendMessage(message: String?, vkId: String?) {
+        if (!message.isNullOrEmpty() && !vkId.isNullOrEmpty()) {
             vk.messages()
                 .send(actor)
                 .userId(vkId.toInt())
@@ -83,14 +93,17 @@ class VKMessageHandling : Handler() {
             "{\"buttons\":[],\"one_time\":true}"
     }
 
-    override fun process(inputJson: JsonObject, databaseConnection: HibernateUtil) {
+    override fun process(inputJson: JsonObject?, databaseConnection: HibernateUtil) {
 
-        val vkId = inputJson.getAsJsonObject("object").get("from_id").asString
-        val messageText = inputJson.getAsJsonObject("object").get("text").asString
+        val vkId = inputJson?.getAsJsonObject("object")?.get("from_id")?.asString
+        val messageText = inputJson?.getAsJsonObject("object")?.get("text")?.asString
 
-        var userModel = requestsToServerApi.getUserModelByVkId(vkId)
+        var userModel = if (!vkId.isNullOrEmpty())
+            requestsToServerApi.getUserModelByVkId(vkId)
+        else
+            null
 
-        val message = if (userModel != null) {
+        val message = if (userModel != null && !messageText.isNullOrEmpty() && !vkId.isNullOrEmpty()) {
             id = userModel.id
             email = userModel.email
 
@@ -109,7 +122,6 @@ class VKMessageHandling : Handler() {
                         BotCommands.UnSubscribeEmail -> unSubscribe("email", databaseConnection)
 
                         BotCommands.UnSubscribeVk -> unSubscribe("vk", databaseConnection)
-
 
                         BotCommands.SubscribeEmail -> subscribe("email", databaseConnection)
 
@@ -140,9 +152,9 @@ class VKMessageHandling : Handler() {
                     if (userModel != null) {
                         databaseConnection.addEntity(
                             NotificationsEntity(
-                                userModel.id,
+                                id = userModel.id,
                                 vkNotification = true,
-                                emailNotication = true
+                                emailNotification = true
                             )
                         )
                     } else {
@@ -173,9 +185,9 @@ class VKMessageHandling : Handler() {
                                 " кому-нибудь, кто возмжно знает решение проблемы"
                 }
             }
-        } else {
+        } else if (!messageText.isNullOrEmpty()) {
             if (messageText.startsWith("L:")) {
-                userModel = requestsToServerApi.sendTokenToServerForAccess(messageText, vkId)
+                userModel = requestsToServerApi.sendTokenToServerForAccess(messageText, vkId!!)
 
                 if (userModel != null) {
                     id = userModel.id
@@ -187,7 +199,7 @@ class VKMessageHandling : Handler() {
                         NotificationsEntity(
                             id,
                             vkNotification = true,
-                            emailNotication = true
+                            emailNotification = true
                         )
                     )
                     if (res) {
@@ -215,13 +227,16 @@ class VKMessageHandling : Handler() {
                 "Ранее вы не были авторизованы в данном сервисе, " +
                         "а я не понимаю, что мне пишут незнакомцы."
             }
+        } else {
+            null
         }
         sendMessage(message, vkId)
     }
 
     private fun deleteFromNotify(databaseConnection: HibernateUtil): String {
         return if (!id.isNullOrBlank() &&
-            databaseConnection.deleteEntities(id!!, NotificationsEntity())) {
+            databaseConnection.deleteEntities(id!!, NotificationsEntity())
+        ) {
             "Ваши эксклюзивные данные были удалины из базы данных данного сервиса"
         } else {
             "Произошла ошибка отвязки вашего аккаунта от данного сервиса"
@@ -242,7 +257,7 @@ class VKMessageHandling : Handler() {
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotication = false)
+                    val newPersonInfo = personInfo.copy(emailNotification = false)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 else -> false
@@ -270,13 +285,13 @@ class VKMessageHandling : Handler() {
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotication = true)
+                    val newPersonInfo = personInfo.copy(emailNotification = true)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 else -> false
             }
             if (result)
-                "Вы успешно отписаны от $typeNotice рассылки!"
+                "Вы успешно подписаны на $typeNotice рассылки!"
             else
                 "Произошла ошибка при обновлении ваших данных при отписке от $typeNotice рассылки"
         } else

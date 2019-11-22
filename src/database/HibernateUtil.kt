@@ -9,7 +9,6 @@ import org.hibernate.cfg.Configuration
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
 import utils.Config
-import workwithapi.RequestsToServerApi
 
 class HibernateUtil {
     private val logger = LoggerFactory.getLogger(this.javaClass)

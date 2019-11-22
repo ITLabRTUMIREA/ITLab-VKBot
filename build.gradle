@@ -55,30 +55,29 @@ compileTestKotlin {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    compile "ch.qos.logback:logback-classic:$logback_version"
-    compile 'org.jsoup:jsoup:1.12.1'
-    compile "org.hibernate:hibernate-core:5.4.1.Final"
-    compile "org.hibernate:hibernate-entitymanager:5.4.1.Final"
-    compile "org.postgresql:postgresql:42.2.5.jre7"
-    compile "javax.mail:mail:1.5.0-b01"
-    compile 'com.github.kittinunf.fuel:fuel:2.1.0'
-    compile 'com.github.kittinunf.fuel:fuel-gson:2.1.0'
+    implementation("ch.qos.logback:logback-classic:$logback_version")
+    implementation("org.jsoup:jsoup:$jsoup_version")
+
+    implementation("org.hibernate:hibernate-core:$hibernate_version")
+    implementation("org.hibernate:hibernate-entitymanager:$hibernate_version")
+
+    implementation("org.postgresql:postgresql:$postgresql_version")
+    implementation("javax.mail:mail:$mail_version")
+
+    implementation("com.github.kittinunf.fuel:fuel:$fuel_version")
+    implementation("com.github.kittinunf.fuel:fuel-gson:$fuel_version")
 
     compile "io.ktor:ktor-server-netty:$ktor_version"
     compile "io.ktor:ktor-gson:$ktor_version"
 
-    compile('com.vk.api:sdk:0.5.12') {
+    implementation("com.vk.api:sdk:$vk_api_version") {
         exclude group: 'io.netty', module: 'netty-codec-http2'
         exclude group: 'io.netty', module: 'netty-transport-native-kqueue'
         exclude group: 'io.netty', module: 'netty-transport-native-epoll'
         exclude group: 'org.asynchttpclient', module: 'async-http-client'
     }
 
-    compile "com.konghq:unirest-java:2.3.14"
-
-    //compile "org.pac4j:pac4j-oidc:4.0.0-RC1"
-    //compile "org.pac4j:pac4j-http:4.0.0-RC1"
-    //compile "com.github.scribejava:scribejava-apis:6.7.0"
-
+    implementation("com.konghq:unirest-java:$unirestjava_version")
+    implementation("redis.clients:jedis:$jedis_version")
     testCompile "io.ktor:ktor-server-tests:$ktor_version"
 }

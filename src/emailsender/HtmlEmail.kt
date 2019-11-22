@@ -11,12 +11,11 @@ class HtmlEmail {
 
     private var pathToHtmlEmail = ""
     private var htmlCode: String = ""
-    private val logger = LoggerFactory.getLogger("com.rtu.itlab.emailsender.HtmlEmail")
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     init {
-        val config = Config().config!!
         try {
-            pathToHtmlEmail += config.getString("htmlEmail.path")
+            pathToHtmlEmail += Config().loadPath("htmlPage.path")
             htmlCode += getWebSiteCode(pathToHtmlEmail)
         } catch (ex: ConfigException) {
             logger.info(ex.message + " (Config)")
