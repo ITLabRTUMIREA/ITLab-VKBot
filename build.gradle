@@ -46,6 +46,7 @@ repositories {
 idea.module.resourceDirs += file('src')
 
 sourceCompatibility = 1.8
+
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
@@ -54,7 +55,7 @@ compileTestKotlin {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
 
     compile("ch.qos.logback:logback-classic:$logback_version")
     compile("org.jsoup:jsoup:$jsoup_version")
