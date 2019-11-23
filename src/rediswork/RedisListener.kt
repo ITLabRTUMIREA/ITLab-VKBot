@@ -25,15 +25,7 @@ class RedisListener(
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     fun eventHandling(eventView: EventView) {
-        val secretFromConfigForBackApi = Config().loadPath("apiserver.secret")
-        //TODO: add check secret
-//        if (!secretFromConfigForBackApi.isNullOrBlank() &&
-//            !secretFromRequest.isNullOrBlank() &&
-//            secretFromConfigForBackApi == secretFromRequest
-//        ) {
-//
-//
-//        }
+    
         when (NotifyType.values()[eventView.type]) {
             NotifyType.EventNew -> {
                 logger.info("New Event Notification Request")

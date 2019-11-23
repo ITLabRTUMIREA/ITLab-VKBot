@@ -3,8 +3,8 @@ package database.schema
 import javax.persistence.*
 
 @Entity
-@Table(name = "notifications", schema = "public", catalog = "postgres")
-data class NotificationsEntity(
+@Table(name = "user_settings", schema = "public", catalog = "postgres")
+data class UserSettings(
     @Id
     @Column(name = "id")
     val id: String? = null,

@@ -5,8 +5,7 @@ import com.vk.api.sdk.client.VkApiClient
 import com.vk.api.sdk.client.actors.GroupActor
 import com.vk.api.sdk.httpclient.HttpTransportClient
 import database.HibernateUtil
-import database.models.UserModel
-import database.schema.NotificationsEntity
+import database.schema.UserSettings
 import emailsender.*
 import org.slf4j.LoggerFactory
 import messageprocessing.responses.event.Event
@@ -48,7 +47,7 @@ abstract class Handler {
         val event = requestsToServerApi.getEventById(eventView!!.data.id)
         val invitedUsers = event?.invited()?.toMutableList()
 
-        var allUsersInDatabase = databaseConnection.getEntities(NotificationsEntity())?.toMutableList()
+        var allUsersInDatabase = databaseConnection.getEntities(UserSettings())?.toMutableList()
 
         val allUsersInService = requestsToServerApi.getUsers()?.toMutableList()
 
@@ -92,11 +91,11 @@ abstract class Handler {
     }
 
     open fun sendToInvitedUsers(
-        allUsersInDatabase: MutableList<NotificationsEntity>?,
+        allUsersInDatabase: MutableList<UserSettings>?,
         invitedUsers: MutableList<User>?,
         notify: Event
-    ): MutableList<NotificationsEntity>? {
-        val invited = mutableListOf<NotificationsEntity>()
+    ): MutableList<UserSettings>? {
+        val invited = mutableListOf<UserSettings>()
         if (!allUsersInDatabase.isNullOrEmpty()) {
 
             for (it in allUsersInDatabase) {
@@ -132,7 +131,7 @@ abstract class Handler {
 
     open fun sendToUsersNotification(
         allUsersInService: MutableList<User>?,
-        allUsersInDatabase: MutableList<NotificationsEntity>?,
+        allUsersInDatabase: MutableList<UserSettings>?,
         notify: Event
     ) {
         if (allUsersInDatabase != null) {

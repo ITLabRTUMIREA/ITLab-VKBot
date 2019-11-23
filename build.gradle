@@ -43,7 +43,7 @@ repositories {
     maven { url 'https://kotlin.bintray.com/kotlin-js-wrappers' }
 }
 
-idea.module.resourceDirs += file('src')
+//idea.module.resourceDirs += file('src')
 
 sourceCompatibility = 1.8
 

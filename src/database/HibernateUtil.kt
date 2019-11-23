@@ -1,6 +1,6 @@
 package database
 
-import database.schema.NotificationsEntity
+import database.schema.UserSettings
 import org.hibernate.Session
 import org.hibernate.SessionFactory
 import org.hibernate.boot.registry.StandardServiceRegistry
@@ -15,6 +15,10 @@ class HibernateUtil {
     private var sessionFactory: SessionFactory? = null
     private var registry: StandardServiceRegistry? = null
 
+    fun createTable() {
+
+    }
+
     /**
      * Setup session (connect) to database
      */
@@ -23,7 +27,7 @@ class HibernateUtil {
         logger.info("Connecting to postgres database")
         val configuration = Configuration()
 
-        configuration.addAnnotatedClass(database.schema.NotificationsEntity::class.java)
+        configuration.addAnnotatedClass(UserSettings::class.java)
 
         configuration.configure("hibernate.cfg.xml")
 
@@ -40,7 +44,7 @@ class HibernateUtil {
 
         }
 
-        registry = StandardServiceRegistryBuilder().applySettings(configuration.properties).build()
+        registry = StandardServiceRegistryBuilder().applySettings(configuration.properties!!).build()
 
         try {
             sessionFactory = configuration.buildSessionFactory(registry)
@@ -167,7 +171,7 @@ class HibernateUtil {
      * @param classRef
      * @return entity if we got else null
      */
-    fun <T: Any> getEntityById(id: String, classRef: T): T? {
+    fun <T : Any> getEntityById(id: String, classRef: T): T? {
         var session: Session? = null
 
         if (sessionFactory == null || sessionFactory!!.isClosed)
@@ -177,7 +181,7 @@ class HibernateUtil {
             session = sessionFactory!!.openSession()
             session.beginTransaction()
 
-            val entity: T = session.load(classRef::class.java,id)
+            val entity: T = session.load(classRef::class.java, id)
 
             session.close()
             entity
@@ -222,7 +226,7 @@ class HibernateUtil {
      * @return true if the user is found else false
      */
     fun isUserInDatabase(id: String): Boolean {
-        val users = getEntities(NotificationsEntity())
+        val users = getEntities(UserSettings())
         if (!users.isNullOrEmpty()) {
             users.forEach {
                 if (it.id == id)
