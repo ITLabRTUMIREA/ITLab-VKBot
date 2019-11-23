@@ -19,16 +19,19 @@ steps:
 
 
 - task: CopyFiles@2
+  displayName: 'copy libs'
   inputs:
     SourceFolder: 'build/libs/'
     Contents: '**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
 - task: CopyFiles@2
+  displayName: 'copy resources'
   inputs:
     SourceFolder: 'build/resources/main/'
     Contents: '**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)/resources'
 - task: PublishBuildArtifacts@1
+  displayName: 'publish itlab-vkbot-build'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'itlab-vkbot-build'
