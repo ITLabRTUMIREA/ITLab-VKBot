@@ -7,7 +7,7 @@ import bot.keyboard.properties.Color
 import com.vk.api.sdk.queries.messages.MessagesSendQuery
 import com.vk.api.sdk.queries.messages.MessagesSendWithUserIdsQuery
 import database.HibernateUtil
-import database.schema.NotificationsEntity
+import database.schema.UserSettings
 import org.slf4j.LoggerFactory
 import workwithapi.RequestsToServerApi
 
@@ -104,7 +104,7 @@ fun getKeyboardForCurrentPerson(
 
     if (id != null) {
 
-        val user = db.getEntityById(id, NotificationsEntity())
+        val user = db.getEntityById(id, UserSettings())
 
         if (user != null) {
             keyboardButtons.createLine()

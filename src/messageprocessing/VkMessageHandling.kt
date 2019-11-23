@@ -5,7 +5,7 @@ import bot.keyboard.keyboard
 import com.google.gson.JsonObject
 import bot.BotCommands
 import database.HibernateUtil
-import database.schema.NotificationsEntity
+import database.schema.UserSettings
 import emailsender.*
 import org.slf4j.LoggerFactory
 import messageprocessing.responses.event.Event
@@ -151,7 +151,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                     userModel = requestsToServerApi.sendTokenToServerForAccess(messageText, vkId)
                     if (userModel != null) {
                         databaseConnection.addEntity(
-                            NotificationsEntity(
+                            UserSettings(
                                 id = userModel.id,
                                 vkNotification = true,
                                 emailNotification = true
@@ -196,7 +196,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
 
                 if (id != null && email != null) {
                     val res = databaseConnection.addEntity(
-                        NotificationsEntity(
+                        UserSettings(
                             id,
                             vkNotification = true,
                             emailNotification = true
@@ -235,7 +235,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
 
     private fun deleteFromNotify(databaseConnection: HibernateUtil): String {
         return if (!id.isNullOrBlank() &&
-            databaseConnection.deleteEntities(id!!, NotificationsEntity())
+            databaseConnection.deleteEntities(id!!, UserSettings())
         ) {
             "Ваши эксклюзивные данные были удалины из базы данных данного сервиса"
         } else {
@@ -246,7 +246,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     private fun unSubscribe(typeNotice: String, databaseConnection: HibernateUtil): String {
 
         val personInfo = if (!id.isNullOrBlank())
-            databaseConnection.getEntityById(id!!, NotificationsEntity())
+            databaseConnection.getEntityById(id!!, UserSettings())
         else
             null
 
@@ -274,7 +274,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     private fun subscribe(typeNotice: String, databaseConnection: HibernateUtil): String {
 
         val personInfo = if (!id.isNullOrBlank())
-            databaseConnection.getEntityById(id!!, NotificationsEntity())
+            databaseConnection.getEntityById(id!!, UserSettings())
         else
             null
 
