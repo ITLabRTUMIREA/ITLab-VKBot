@@ -17,8 +17,19 @@ steps:
     testResultsFiles: '**/TEST-*.xml'
     tasks: 'build'
 
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'build/libs/'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'build/resources/main/'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/resources'
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: 'build'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'itlab-vkbot-build'
     publishLocation: 'Container'
