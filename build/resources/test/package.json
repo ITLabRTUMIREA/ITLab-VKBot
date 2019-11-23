@@ -1,0 +1,86 @@
+[
+  {
+    "id": "a50fe29a-4966-4ed9-49de-08d76926bc66",
+    "title": "test2",
+    "address": "qwrqr",
+    "shifts": [
+      {
+        "beginTime": "Nov 19, 2019, 3:00:00 PM",
+        "endTime": "Nov 19, 2019, 3:00:00 PM",
+        "places": [
+          {
+            "targetParticipantsCount": 1,
+            "invited": [
+              {
+                "user": {
+                  "id": "d3ea79a4-1f51-4633-30ab-08d75b7903fc",
+                  "firstName": "Tester",
+                  "lastName": "Testerov",
+                  "phoneNumber": "+79161853166",
+                  "email": "test@gmail.com",
+                  "properties": [
+                    {
+                      "value": "52495468",
+                      "status": "Confirmed",
+                      "userPropertyType": {
+                        "id": "ff779472-f754-438e-d54e-08d63e82f7bc",
+                        "title": "VKID"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": 2,
+    "data": {
+      "id": "965bfea4-3422-4872-49f7-08d76926bc66",
+      "title": "qwea",
+      "eventType": {
+        "id": "469885eb-de69-49ff-f929-08d767562c52",
+        "title": "test_event",
+        "description": ""
+      },
+      "beginTime": "2019-11-22T17:00:00Z",
+      "placeId": "cf24cbdf-ff29-4422-90f0-08d76926bc6d",
+      "placeDescription": "",
+      "shiftDescription": "",
+      "currentParticipantsCount": 1,
+      "targetParticipantsCount": 1,
+      "user": {
+        "id": "d3ea79a4-1f51-4633-30ab-08d75b7903fc",
+        "firstName": "Tester",
+        "lastName": "Testerov",
+        "middleName": null,
+        "phoneNumber": "+79161853166",
+        "email": "test@gmail.com",
+        "properties": [
+          {
+            "value": "52495468",
+            "status": "Confirmed",
+            "userPropertyType": {
+              "id": "ff779472-f754-438e-d54e-08d63e82f7bc",
+              "title": "VKID",
+              "description": null,
+              "instancesCount": 1,
+              "isLocked": true
+            }
+          }
+        ]
+      },
+      "eventRole": {
+        "id": "68c65de8-84f9-4523-b2e4-08d7676a3924",
+        "title": "test_role",
+        "description": ""
+      },
+      "creationTime": "2019-11-22T17:08:48.7451312Z",
+      "doneTime": "2019-11-22T17:08:51.1369444Z"
+    },
+    "secret": ""
+  }
+]

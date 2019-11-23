@@ -22,11 +22,12 @@ jar {
     manifest {
         attributes 'Implementation-Title': 'Vk bot build',
                 'Implementation-Version': version,
-                'Main-Class': 'io.ktor.server.netty.EngineMain'
+                'Main-Class': 'MainKt'
     }
     baseName = project.name
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
+
 
 sourceSets {
     main.kotlin.srcDirs = main.java.srcDirs = ['src']
@@ -55,29 +56,31 @@ compileTestKotlin {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("org.jsoup:jsoup:$jsoup_version")
+    compile("ch.qos.logback:logback-classic:$logback_version")
+    compile("org.jsoup:jsoup:$jsoup_version")
 
-    implementation("org.hibernate:hibernate-core:$hibernate_version")
-    implementation("org.hibernate:hibernate-entitymanager:$hibernate_version")
+    compile("org.hibernate:hibernate-core:$hibernate_version")
+    compile("org.hibernate:hibernate-entitymanager:$hibernate_version")
 
-    implementation("org.postgresql:postgresql:$postgresql_version")
-    implementation("javax.mail:mail:$mail_version")
+    compile("org.postgresql:postgresql:$postgresql_version")
+    compile("javax.mail:mail:$mail_version")
 
-    implementation("com.github.kittinunf.fuel:fuel:$fuel_version")
-    implementation("com.github.kittinunf.fuel:fuel-gson:$fuel_version")
+    compile("com.github.kittinunf.fuel:fuel:$fuel_version")
+    compile("com.github.kittinunf.fuel:fuel-gson:$fuel_version")
 
     compile "io.ktor:ktor-server-netty:$ktor_version"
     compile "io.ktor:ktor-gson:$ktor_version"
 
-    implementation("com.vk.api:sdk:$vk_api_version") {
+    compile("org.slf4j:slf4j-simple:1.7.29")
+
+    compile("com.vk.api:sdk:$vk_api_version") {
         exclude group: 'io.netty', module: 'netty-codec-http2'
         exclude group: 'io.netty', module: 'netty-transport-native-kqueue'
         exclude group: 'io.netty', module: 'netty-transport-native-epoll'
         exclude group: 'org.asynchttpclient', module: 'async-http-client'
     }
 
-    implementation("com.konghq:unirest-java:$unirestjava_version")
-    implementation("redis.clients:jedis:$jedis_version")
+    compile("com.konghq:unirest-java:$unirestjava_version")
+    compile("redis.clients:jedis:$jedis_version")
     testCompile "io.ktor:ktor-server-tests:$ktor_version"
 }

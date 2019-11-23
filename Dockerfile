@@ -1,7 +1,4 @@
-FROM gradle:5.6.4-r0-jdk8-alpine
-
-ENV SERVICE_DIR /opt/service
-WORKDIR ${SERVICE_DIR}
-COPY . .
-
-RUN ./gradlew build --stacktrace
+FROM openjdk:8-jdk-alpine
+EXPOSE 8080
+ADD /build/libs/vk_bot-0.0.1.jar vk_bot-0.0.1.jar
+ENTRYPOINT ["java", "-jar", "vk_bot-0.0.1.jar"]

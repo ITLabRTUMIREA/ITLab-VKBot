@@ -65,7 +65,7 @@ fun Application.module() {
                 )
 
                 val secretFromConfigForVkApi = Config().loadPath("group.secret")
-                val secretFromConfigForBackApi = Config().loadPath("apiserver.secret")
+
                 val secretFromRequest = inputJson.get("secret").asString
 
                 //If request from vk api
@@ -99,12 +99,6 @@ fun Application.module() {
                             call.respond("OK")
                         }
                     }
-
-                } else if (!secretFromConfigForBackApi.isNullOrBlank() &&
-                    !secretFromRequest.isNullOrBlank() &&
-                    secretFromConfigForBackApi == secretFromRequest
-                ) {
-
 
                 }
 
