@@ -3,6 +3,7 @@ trigger:
 - develop
 pool:
   vmImage: 'ubuntu-latest'
+name: $(BuildID)-$(Build.SourceBranchName)
 
 steps:
 - task: Gradle@2
