@@ -17,22 +17,30 @@ steps:
     testResultsFiles: '**/TEST-*.xml'
     tasks: 'build'
 
-
 - task: CopyFiles@2
   displayName: 'copy libs'
   inputs:
     SourceFolder: 'build/libs/'
     Contents: '**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
 - task: CopyFiles@2
   displayName: 'copy resources'
   inputs:
     SourceFolder: 'build/resources/main/'
     Contents: '**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)/resources'
+
 - task: PublishBuildArtifacts@1
-  displayName: 'publish itlab-vkbot-build'
+  displayName: 'publish itlab-notify-build'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'itlab-vkbot-build'
+    ArtifactName: 'itlab-notify-build'
+    publishLocation: 'Container'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'publish itlab-notify-deploy'
+  inputs:
+    PathtoPublish: 'deploy'
+    ArtifactName: 'itlab-notify-deploy'
     publishLocation: 'Container'
