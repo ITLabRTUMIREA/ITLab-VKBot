@@ -6,8 +6,6 @@
 target/
 \.idea/
 
-application\.conf
-
 resources/secureInfo\.conf
 
 *.tar
