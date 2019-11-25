@@ -41,10 +41,12 @@ fun Application.module() {
         }
     }
 
+    if (redisListener.jedis == null || !redisListener.jedis!!.isConnected)
+        thread { redisListener.listenEvents() }
+
     routing {
         get("/") {
-            if (redisListener.jedis == null || !redisListener.jedis!!.isConnected)
-                thread { redisListener.listenEvents() }
+
 //            val inputJson = Gson().fromJson(
 //                InputStreamReader(
 //                    call.receiveStream(),
