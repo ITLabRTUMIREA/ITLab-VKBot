@@ -14,6 +14,10 @@ class Config {
     var config: com.typesafe.config.Config? = null
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
+    init {
+        loadConfig()
+    }
+
     private fun loadConfig() {
         config = when (pathToConfFile) {
             null -> ConfigFactory.load()
@@ -64,13 +68,14 @@ class Config {
      * @param path path in config file
      * @return string value from config file or null
      */
-    fun loadPath(path: String): String? =
-        if (config != null && config!!.hasPath(path)) {
+    fun loadPath(path: String): String? {
+        return if (config != null && config!!.hasPath(path)) {
             logger.info("$path loaded from config")
             config!!.getString(path)
         } else {
             logger.error("Can't load $path from config")
             null
         }
+    }
 
 }

@@ -33,9 +33,7 @@ abstract class Handler {
 
     }
 
-    open fun process(inputJson: JsonObject? = null, databaseConnection: HibernateUtil) {
-
-    }
+    open fun process(inputJson: JsonObject? = null, databaseConnection: HibernateUtil) {}
 
     open fun process(
         requestsToServerApi: RequestsToServerApi,
@@ -60,8 +58,9 @@ abstract class Handler {
     }
 
     open fun getVkId(user: User): Int? {
+        val vkId = Config().loadPath("propertiesIds.vk")
         for (it in user.properties) {
-            if (it.userPropertyType.title == "VKID")
+            if (it.userPropertyType.id == vkId)
                 return it.value.toInt()
             else
                 continue
@@ -90,34 +89,35 @@ abstract class Handler {
                 ).execute()
     }
 
+    open fun sendVk(message: String?, vkId: String?) {}
+
     open fun sendToInvitedUsers(
         allUsersInDatabase: MutableList<UserSettings>?,
         invitedUsers: MutableList<User>?,
         notify: Event
     ): MutableList<UserSettings>? {
-        val invited = mutableListOf<UserSettings>()
-        if (!allUsersInDatabase.isNullOrEmpty()) {
+        if (!invitedUsers.isNullOrEmpty()) {
 
-            for (it in allUsersInDatabase) {
-                var userToDelete: User? = null
-                if (invitedUsers != null) {
-                    val user = findUserById(it.id!!, invitedUsers)
+            for (it in invitedUsers) {
+                var userToDelete: UserSettings? = null
+
+                if (allUsersInDatabase != null) {
+                    val user = findUserSettingsById(it.id, allUsersInDatabase)
                     if (user != null) {
                         userToDelete = user
-                        val currentNotification = notify.invite().toName(user.firstName)
+                        val currentNotification = notify.invite().toName(it.firstName)
                         logger.info("User with id = ${user.id} invited")
 
-                        if (it.vkNotification) {
-                            sendVk(user, currentNotification)
+                        if (user.vkNotification) {
+                            sendVk(it, currentNotification)
                         }
-                        if (it.emailNotification) {
-                            sendEmail(setOf(user.email!!), currentNotification)
+                        if (user.emailNotification) {
+                            sendEmail(setOf(it.email!!), currentNotification)
                         }
-                        invited.add(it)
                     }
 
-                    if (userToDelete != null && !invitedUsers.isNullOrEmpty())
-                        invitedUsers.remove(userToDelete)
+                    if (userToDelete != null && !allUsersInDatabase.isNullOrEmpty())
+                        allUsersInDatabase.remove(userToDelete)
 
                 } else {
                     break
@@ -125,7 +125,7 @@ abstract class Handler {
             }
         }
 
-        return allUsersInDatabase?.minus(invited)?.toMutableList()
+        return allUsersInDatabase
     }
 
 
@@ -159,6 +159,14 @@ abstract class Handler {
 
     open fun findUserById(id: String, users: MutableList<User>): User? {
         for (user in users) {
+            if (user.id == id)
+                return user
+        }
+        return null
+    }
+
+    open fun findUserSettingsById(id: String, usersSettings: MutableList<UserSettings>): UserSettings? {
+        for (user in usersSettings) {
             if (user.id == id)
                 return user
         }

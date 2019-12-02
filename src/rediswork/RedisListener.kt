@@ -8,12 +8,14 @@ import utils.Config
 import java.lang.Exception
 import com.google.gson.Gson
 import database.HibernateUtil
+import kotlinx.coroutines.delay
 import messageprocessing.responses.EventChange
 import messageprocessing.responses.EventConfirm
 import messageprocessing.responses.EventNew
 import messageprocessing.responses.event.EventView
 import messageprocessing.responses.event.NotifyType
 import workwithapi.RequestsToServerApi
+import java.util.*
 import kotlin.concurrent.thread
 
 
@@ -25,7 +27,7 @@ class RedisListener(
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     fun eventHandling(eventView: EventView) {
-    
+
         when (NotifyType.values()[eventView.type]) {
             NotifyType.EventNew -> {
                 logger.info("New Event Notification Request")
@@ -59,6 +61,9 @@ class RedisListener(
     }
 
     fun listenEvents() {
+        while (Config().config == null || Config().config!!.isEmpty){
+            Thread.sleep(3000)
+        }
         val password = Config().loadPath("database.redis.password")
         val port = Config().loadPath("database.redis.port")?.toInt()
         val host = Config().loadPath("database.redis.host")
@@ -72,7 +77,7 @@ class RedisListener(
                 val chanelName = Config().loadPath("database.redis.chanel")
                 val jedisPubSub = object : JedisPubSub() {
                     override fun onMessage(channel: String, message: String?) {
-                        println("Channel $channel has sent a message $message")
+                        println("Channel $channel has sent a message")
                         if (!chanelName.isNullOrEmpty() && chanelName == chanel && !message.isNullOrEmpty()) {
                             val eventView = Gson().fromJson(message, EventView::class.java)
                             eventHandling(eventView)
