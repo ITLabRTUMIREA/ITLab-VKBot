@@ -23,7 +23,6 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     private var keyboard = "{\"buttons\":[],\"one_time\":true}"
 
 
-
     override fun sendEmail(destinationEmails: Set<String>, event: Event) {
         val html = HtmlEmail()
 
@@ -67,7 +66,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
         }
     }
 
-    private fun sendMessage(message: String?, vkId: String?) {
+    override fun sendVk(message: String?, vkId: String?) {
         if (!message.isNullOrEmpty() && !vkId.isNullOrEmpty()) {
             vk.messages()
                 .send(actor)
@@ -166,6 +165,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
 
                 if (res) {
                     keyboard = getKeyboardJson(vkId, databaseConnection)
+                    sendEmail(setOf(userModel!!.email), Event())
                     "Спасибо, за авторизацию в центре уведомлений" +
                             " RTUITLAB, теперь у меня +1 человек, чтобы заваливать" +
                             " его возможно важной для него информацией"
@@ -230,7 +230,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
         } else {
             null
         }
-        sendMessage(message, vkId)
+        sendVk(message, vkId)
     }
 
     private fun deleteFromNotify(databaseConnection: HibernateUtil): String {

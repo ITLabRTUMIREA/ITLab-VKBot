@@ -52,7 +52,6 @@ class Event : Builder() {
                 "\nОкончание: ${dateFormat.format(eventView.endTime().time)} по МСК" +
                 "\nАдрес проведения мероприятия: ${eventView.data.address}"
 
-        println(text)
         return addParams("event_info", text) as Event
     }
 

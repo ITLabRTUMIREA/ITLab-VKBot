@@ -1,0 +1,47 @@
+{
+  "type": 2,
+  "data": {
+    "id": "62b12d63-08e5-4530-bc34-08d7757825e0",
+    "title": "afasfa",
+    "eventType": {
+      "id": "469885eb-de69-49ff-f929-08d767562c52",
+      "title": "test_event",
+      "description": ""
+    },
+    "beginTime": "2019-12-02T11:00:00Z",
+    "placeId": "8d0f0dcb-a639-4261-d171-08d7757825e8",
+    "placeDescription": "",
+    "shiftDescription": "",
+    "currentParticipantsCount": 1,
+    "targetParticipantsCount": 1,
+    "user": {
+      "id": "d3ea79a4-1f51-4633-30ab-08d75b7903fc",
+      "firstName": "Tester",
+      "lastName": "Testerov",
+      "middleName": null,
+      "phoneNumber": "+79161853166",
+      "email": "test@gmail.com",
+      "properties": [
+        {
+          "value": "52495468",
+          "status": "Confirmed",
+          "userPropertyType": {
+            "id": "ff779472-f754-438e-d54e-08d63e82f7bc",
+            "title": "VKID",
+            "description": null,
+            "instancesCount": 1,
+            "isLocked": true
+          }
+        }
+      ]
+    },
+    "eventRole": {
+      "id": "68c65de8-84f9-4523-b2e4-08d7676a3924",
+      "title": "test_role",
+      "description": ""
+    },
+    "creationTime": "2019-12-02T11:19:24.3673918Z",
+    "doneTime": "2019-12-02T11:19:31.2971394Z"
+  },
+  "secret": ""
+}
