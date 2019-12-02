@@ -1,20 +1,19 @@
-FROM maven:3.5.4-jdk-8 as builder
+FROM gradle:4.7.0-jdk8-alpine as build
 
 ENV SERVICE_DIR /opt/service
-WORKDIR ${SERVICE_DIR}
-COPY . .
-RUN mvn package
+#WORKDIR ${SERVICE_DIR}
+#COPY . .
 
+USER root
+ RUN   apk update \
+  &&   apk add ca-certificates wget \
+  &&   update-ca-certificates
 
-FROM openjdk:8-jdk
+COPY --chown=gradle:gradle . /home/gradle/src
+WORKDIR /home/gradle/src
+RUN gradle build --stacktrace
+
+FROM openjdk:8-jdk-alpine
 EXPOSE 8080
-ENV SERVICE_DIR /opt/service
-ENV SERVICE_JAR ItLabMirea-1.0-SNAPSHOT.jar
-RUN mkdir -p ${SERVICE_DIR}
-WORKDIR ${SERVICE_DIR}
-COPY --from=builder ${SERVICE_DIR}/target/${SERVICE_JAR} .
-COPY src/htmlPageForEmail/notification.html src/htmlPageForEmail/notification.html
-CMD java ${JAVA_OPTS} \
-    -server -Xms128m -Xmx128m \
-    -Djava.security.egd=file:/dev/./urandom \
-    -jar ${SERVICE_DIR}/${SERVICE_JAR}
+COPY --from=build /home/gradle/src/build/libs/vk_bot-0.0.1.jar vk_bot-0.0.1.jar
+ENTRYPOINT ["java", "-jar", "vk_bot-0.0.1.jar"]

@@ -1,0 +1,47 @@
+trigger:
+- master
+- develop
+pool:
+  vmImage: 'ubuntu-latest'
+name: $(BuildID)-$(Build.SourceBranchName)
+
+steps:
+- task: Gradle@2
+  inputs:
+    workingDirectory: ''
+    gradleWrapperFile: 'gradlew'
+    gradleOptions: '-Xmx3072m'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.8'
+    jdkArchitectureOption: 'x64'
+    publishJUnitResults: true
+    testResultsFiles: '**/TEST-*.xml'
+    tasks: 'build'
+
+- task: CopyFiles@2
+  displayName: 'copy libs'
+  inputs:
+    SourceFolder: 'build/libs/'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: CopyFiles@2
+  displayName: 'copy resources'
+  inputs:
+    SourceFolder: 'build/resources/main/'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/resources'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'publish itlab-notify-build'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'itlab-notify-build'
+    publishLocation: 'Container'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'publish itlab-notify-deploy'
+  inputs:
+    PathtoPublish: 'deploy'
+    ArtifactName: 'itlab-notify-deploy'
+    publishLocation: 'Container'
