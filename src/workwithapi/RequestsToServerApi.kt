@@ -2,9 +2,7 @@ package workwithapi
 
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.result.Result
-import database.models.UserModel
 import org.slf4j.LoggerFactory
-
 import com.github.kittinunf.fuel.gson.responseObject
 import com.github.kittinunf.fuel.httpPost
 import com.google.gson.Gson
@@ -114,8 +112,7 @@ class RequestsToServerApi {
         }
     }
 
-    fun getUserModelByVkId(vkId: String): UserModel? {
-        //println(accessToken)
+    fun getUserModelByVkId(vkId: String): User? {
         return if (!accessToken.isNullOrBlank()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -125,7 +122,7 @@ class RequestsToServerApi {
                         "Content-Type" to "application/json",
                         "Authorization" to "Bearer $accessToken"
                     )
-                    .responseObject<Array<UserModel>>()
+                    .responseObject<Array<User>>()
 
                 when (result) {
                     is Result.Failure -> {
@@ -248,7 +245,7 @@ class RequestsToServerApi {
     fun sendTokenToServerForAccess(
         messageText: String,
         vkId: String
-    ): UserModel? {
+    ): User? {
         return if (!accessToken.isNullOrEmpty()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -286,7 +283,7 @@ class RequestsToServerApi {
                     is Result.Success -> {
                         val data = result.get()
                         if (data.isNotEmpty()) {
-                            val response = Gson().fromJson(data, UserModel::class.java)
+                            val response = Gson().fromJson(data, User::class.java)
                             logger.info("User (${response.id}) data received")
                             response
                         } else {
