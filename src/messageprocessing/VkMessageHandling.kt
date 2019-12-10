@@ -92,13 +92,6 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
             "{\"buttons\":[],\"one_time\":true}"
     }
 
-    private fun getErrorText(clarification: String) = "По непредвиденным для нас обстоятельствам" +
-            " во время вашей авторизации что-то пошло не" +
-            " так${clarification}, " +
-            "если вы взволнованы произошедшим, то сообщите" +
-            " кому-нибудь, кто возмжно знает решение проблемы"
-
-
     override fun process(inputJson: JsonObject?, databaseConnection: HibernateUtil) {
 
         val vkId = inputJson?.getAsJsonObject("object")?.get("from_id")?.asString
@@ -203,7 +196,10 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                     }
                 } else {
                     keyboard = "{\"buttons\":[],\"one_time\":true}"
-                    getErrorText("")
+                    "По непредвиденным для нас обстоятельствам" +
+                            " во время вашей авторизации что-то пошло не" +
+                            " так, если вы взволнованы произошедшим, то сообщите" +
+                            " кому-нибудь, кто возмжно знает решение проблемы"
                 }
             } else {
                 keyboard = "{\"buttons\":[],\"one_time\":true}"
