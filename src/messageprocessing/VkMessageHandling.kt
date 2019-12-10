@@ -102,6 +102,8 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
         else
             null
 
+        
+
         val message = if (userModel != null && !messageText.isNullOrEmpty() && !vkId.isNullOrEmpty()) {
             id = userModel.id
             email = userModel.email

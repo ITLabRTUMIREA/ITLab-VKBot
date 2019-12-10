@@ -31,7 +31,7 @@ class HibernateUtil {
 
         configuration.configure("hibernate.cfg.xml")
 
-        if (Config("resources/secureInfo.conf").config != null) {
+        if (Config("resources/secureInfo.conf").companion.config != null) {
 
             val username = Config().loadPath("database.postgres.username")
             if (username != null) configuration.setProperty("hibernate.connection.username", username)
@@ -49,10 +49,6 @@ class HibernateUtil {
         try {
             sessionFactory = configuration.buildSessionFactory(registry)
             logger.info("Connection established")
-        } catch (ex1: PSQLException) {
-            logger.error(ex1.message)
-            if (sessionFactory != null)
-                StandardServiceRegistryBuilder.destroy(registry)
         } catch (ex: Exception) {
             logger.error(ex.message)
             if (sessionFactory != null)
