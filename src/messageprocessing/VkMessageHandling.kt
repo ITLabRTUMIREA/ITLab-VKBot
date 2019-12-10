@@ -92,6 +92,13 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
             "{\"buttons\":[],\"one_time\":true}"
     }
 
+    private fun getErrorText(clarification: String) = "По непредвиденным для нас обстоятельствам" +
+            " во время вашей авторизации что-то пошло не" +
+            " так${clarification}, " +
+            "если вы взволнованы произошедшим, то сообщите" +
+            " кому-нибудь, кто возмжно знает решение проблемы"
+
+
     override fun process(inputJson: JsonObject?, databaseConnection: HibernateUtil) {
 
         val vkId = inputJson?.getAsJsonObject("object")?.get("from_id")?.asString
@@ -102,12 +109,9 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
         else
             null
 
-        
-
         val message = if (userModel != null && !messageText.isNullOrEmpty() && !vkId.isNullOrEmpty()) {
             id = userModel.id
             email = userModel.email
-
             if (databaseConnection.isUserInDatabase(id!!)) {
                 keyboard = getKeyboardJson(vkId, databaseConnection)
 
@@ -140,51 +144,31 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                             result
                         }
 
-                        null -> "Дорогой подписчик ! К большому для нас сожалению, и , может быть, для вас" +
-                                ", но я вас не понимаю. Пожалуйста, изучите мой лексикон написав комманду \"/help\" " +
-                                "и тогда в следующий раз я скорее всего смогу вас понять"
+                        null ->
+                            "Дорогой подписчик ! К большому для нас сожалению, и , может быть, для вас" +
+                                    ", но я вас не понимаю. Пожалуйста, изучите мой лексикон написав комманду \"/help\" " +
+                                    "и тогда в следующий раз я скорее всего смогу вас понять"
+
                     }
                     keyboard = getKeyboardJson(vkId, databaseConnection)
                     msg
                 }
             } else {
-                val res = if (messageText.startsWith("L:")) {
-                    userModel = requestsToServerApi.sendTokenToServerForAccess(messageText, vkId)
-                    if (userModel != null) {
-                        databaseConnection.addEntity(
-                            UserSettings(
-                                id = userModel.id,
-                                vkNotification = true,
-                                emailNotification = true
-                            )
-                        )
-                    } else {
-                        false
-                    }
-                } else {
-                    false
-                }
+                val res = databaseConnection.addEntity(
+                    UserSettings(
+                        id,
+                        vkNotification = true,
+                        emailNotification = true
+                    )
+                )
 
                 if (res) {
                     keyboard = getKeyboardJson(vkId, databaseConnection)
-                    sendEmail(setOf(userModel!!.email), Event())
-                    "Спасибо, за авторизацию в центре уведомлений" +
-                            " RTUITLAB, теперь у меня +1 человек, чтобы заваливать" +
-                            " его возможно важной для него информацией"
+                    "Вы добавлены в базу данных рассылки!"
                 } else {
                     keyboard = "{\"buttons\":[],\"one_time\":true}"
-                    if (messageText.startsWith("L:"))
-                        "По непредвиденным для нас обстоятельствам" +
-                                " во время вашей авторизации что-то пошло не" +
-                                " так (Возможно не верный код авторизации), " +
-                                "если вы взволнованы произошедшим, то сообщите" +
-                                " кому-нибудь, кто возмжно знает решение проблемы"
-                    else
-                        "По непредвиденным для нас обстоятельствам" +
-                                " во время вашей авторизации что-то пошло не" +
-                                " так (Вы прислали не код авторизации), " +
-                                "если вы взволнованы произошедшим, то сообщите" +
-                                " кому-нибудь, кто возмжно знает решение проблемы"
+                    "Мы знаем что вы добавляли vk id на сайт, " +
+                            "но по каким то причинам мы не можем добавить вас в базу данных"
                 }
             }
         } else if (!messageText.isNullOrEmpty()) {
@@ -219,10 +203,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                     }
                 } else {
                     keyboard = "{\"buttons\":[],\"one_time\":true}"
-                    "По непредвиденным для нас обстоятельствам" +
-                            " во время вашей авторизации что-то пошло не" +
-                            " так, если вы взволнованы произошедшим, то сообщите" +
-                            " кому-нибудь, кто возмжно знает решение проблемы"
+                    getErrorText("")
                 }
             } else {
                 keyboard = "{\"buttons\":[],\"one_time\":true}"
