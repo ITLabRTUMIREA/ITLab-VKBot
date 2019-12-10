@@ -195,7 +195,7 @@ abstract class Handler {
         }
 
         val emailConfiguration = loadConfigurationsForEmail()
-
+        println(emailConfiguration.port)
         if (emailConfiguration.email != null && emailConfiguration.password != null &&
             emailConfiguration.subject != null && emailConfiguration.port != null &&
             emailConfiguration.host != null
