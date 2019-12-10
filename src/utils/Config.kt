@@ -5,20 +5,18 @@ import org.slf4j.LoggerFactory
 import java.io.File
 
 class Config {
+
     companion object {
         var pathToConfFile: String? = null
+        var config: com.typesafe.config.Config? = null
     }
 
     val companion = Companion
 
-    var config: com.typesafe.config.Config? = null
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
-    init {
-        loadConfig()
-    }
-
-    private fun loadConfig() {
+    fun loadConfig() {
+        logger.info("Loading config")
         config = when (pathToConfFile) {
             null -> ConfigFactory.load()
             else -> {
@@ -47,9 +45,7 @@ class Config {
      * Default constrictor if config located in the resources/secureInfo.conf
      */
     constructor() {
-        logger.info("Loading config")
         if (pathToConfFile == null) pathToConfFile = "resources/secureInfo.conf"
-        loadConfig()
     }
 
     /**
@@ -57,10 +53,7 @@ class Config {
      * @param pathToConfFile path to config file
      */
     constructor(pathToConfFile: String?) {
-        logger.info("Loading config")
         Companion.pathToConfFile = pathToConfFile
-        loadConfig()
-
     }
 
     /**

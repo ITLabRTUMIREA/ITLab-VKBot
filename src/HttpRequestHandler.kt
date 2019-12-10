@@ -1,5 +1,3 @@
-@file:Suppress("IMPLICIT_CAST_TO_ANY")
-
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
@@ -26,6 +24,7 @@ import kotlin.concurrent.thread
 @Suppress("requestHandler")
 fun Application.module() {
     Config("resources/secureInfo.conf")
+    Config().loadConfig()
 
     val databaseConnection = HibernateUtil().setUpSession()
 
@@ -45,15 +44,18 @@ fun Application.module() {
         thread { redisListener.listenEvents() }
 
     routing {
-        get("/") {
 
-//            val inputJson = Gson().fromJson(
-//                InputStreamReader(
-//                    call.receiveStream(),
-//                    "UTF-8"
-//                ), JsonObject::class.java
-//            )
-//            println(inputJson)
+        get("/loadconfig") {
+            redisListener.unsubscribe()
+            Config().loadConfig()
+
+            if (redisListener.jedis == null || !redisListener.jedis!!.isConnected)
+                thread { redisListener.listenEvents() }
+
+            call.respond(HttpStatusCode.OK)
+        }
+
+        get("/") {
             call.respond("Server is online")
         }
 
