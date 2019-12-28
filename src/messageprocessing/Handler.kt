@@ -87,6 +87,7 @@ abstract class Handler {
                 .message(
                     event.concatenate()
                 ).execute()
+
     }
 
     open fun sendVk(message: String?, vkId: String?) {}
@@ -108,6 +109,7 @@ abstract class Handler {
                         val currentNotification = notify.invite().toName(it.firstName)
                         logger.info("User with id = ${user.id} invited")
 
+                        Thread.sleep(4000)
                         if (user.vkNotification) {
                             sendVk(it, currentNotification)
                         }
@@ -141,6 +143,7 @@ abstract class Handler {
                     if (user != null) {
                         if (user.id == it.id) {
                             val currentNotify = notify.toName(user.firstName)
+                            Thread.sleep(4000)
                             if (it.vkNotification) {
                                 sendVk(user, currentNotify)
                             }
@@ -173,9 +176,9 @@ abstract class Handler {
         return null
     }
 
-    open fun sendEmail(destinationEmails: Set<String>, event: Event) {
+    open fun sendEmail(destinationEmails: Set<String>, event: Event? = null) {
         val html = HtmlEmail()
-        val emailNotify = event.getForEmailNotice()
+        val emailNotify = event!!.getForEmailNotice()
 
         if (emailNotify.contains("description"))
             html.changeDescription(emailNotify["description"]!!)
@@ -195,7 +198,6 @@ abstract class Handler {
         }
 
         val emailConfiguration = loadConfigurationsForEmail()
-        println(emailConfiguration.port)
         if (emailConfiguration.email != null && emailConfiguration.password != null &&
             emailConfiguration.subject != null && emailConfiguration.port != null &&
             emailConfiguration.host != null

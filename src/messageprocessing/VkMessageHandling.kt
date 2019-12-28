@@ -23,7 +23,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     private var keyboard = "{\"buttons\":[],\"one_time\":true}"
 
 
-    override fun sendEmail(destinationEmails: Set<String>, event: Event) {
+    override fun sendEmail(destinationEmails: Set<String>, event: Event?) {
         val html = HtmlEmail()
 
         when (val apiUrl = Config().loadPath("apiserver.host")) {
@@ -109,11 +109,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                 keyboard = getKeyboardJson(vkId, databaseConnection)
 
                 if (messageText.startsWith("L:"))
-                    "По моему вы прислали код для авторизации " +
-                            "в данном сервисе. Мне не хотелось бы вас огорчать" +
-                            ", но к большому сожалению придется. Возможно вы даже " +
-                            "и не подозревали, что я скажу это, но я не могу вас авторизовать " +
-                            "так как по моим данным вы уже были авторизованы в нашем сервисе."
+                    "Вы уже авторизованы в этом сервисе &#10084;"
                 else {
                     val msg = when (BotCommands.getEnumClassByCommandText(messageText)) {
 
@@ -128,8 +124,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                         BotCommands.DeleteFromNotifyCenter -> deleteFromNotify(databaseConnection)
 
                         BotCommands.Help -> {
-                            var result = "Возможные комманды, которые вы при большом " +
-                                    "желании можете мне лениво писать:\n"
+                            var result = "Комманды, которые я знаю: \n"
                             BotCommands.values().forEach {
                                 if (it.commandText != "/help")
                                     result += it.commandText + "\n"
@@ -138,9 +133,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                         }
 
                         null ->
-                            "Дорогой подписчик ! К большому для нас сожалению, и , может быть, для вас" +
-                                    ", но я вас не понимаю. Пожалуйста, изучите мой лексикон написав комманду \"/help\" " +
-                                    "и тогда в следующий раз я скорее всего смогу вас понять"
+                            "Я вас не понимаю, то, что я понимаю вы можете узнать написав комманду \"/help\""
 
                     }
                     keyboard = getKeyboardJson(vkId, databaseConnection)
@@ -157,11 +150,11 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
 
                 if (res) {
                     keyboard = getKeyboardJson(vkId, databaseConnection)
-                    "Вы добавлены в базу данных рассылки!"
+                    "Вы добавлены в базу данных рассылки &#128519;"
                 } else {
                     keyboard = "{\"buttons\":[],\"one_time\":true}"
-                    "Мы знаем что вы добавляли vk id на сайт, " +
-                            "но по каким то причинам мы не можем добавить вас в базу данных"
+                    "Ранее вы уже добавляли vk id на сайт, но произошла ошибка " +
+                            "с добавлением вас в базу данных &#128546;"
                 }
             }
         } else if (!messageText.isNullOrEmpty()) {
@@ -183,28 +176,20 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                     )
                     if (res) {
                         keyboard = getKeyboardJson(vkId, databaseConnection)
-                        "Спасибо, за авторизацию в центре уведомлений" +
-                                " RTUITLAB, теперь у меня +1 человек, чтобы заваливать" +
-                                " его возможно важной для него информацией"
+                        sendEmail(setOf(email!!))
+                        "Поздравляем!, вы авторизовались в этом сервисе &#128293;&#128293;&#128293;"
                     } else {
                         keyboard = "{\"buttons\":[],\"one_time\":true}"
-                        "По непредвиденным для нас обстоятельствам" +
-                                " во время вашей авторизации что-то пошло не" +
-                                " так с добавлением вас в базу данных," +
-                                " если вы взволнованы произошедшим, то сообщите" +
-                                " кому-нибудь, кто возмжно знает решение проблемы"
+                        "Произошла ошибка во время добавления вас в базу данных &#128546;"
                     }
                 } else {
                     keyboard = "{\"buttons\":[],\"one_time\":true}"
-                    "По непредвиденным для нас обстоятельствам" +
-                            " во время вашей авторизации что-то пошло не" +
-                            " так, если вы взволнованы произошедшим, то сообщите" +
-                            " кому-нибудь, кто возмжно знает решение проблемы"
+                    "Произошла ошибка во время вашей авторизации. Возможно не верный код авторизации &#128546;"
                 }
             } else {
                 keyboard = "{\"buttons\":[],\"one_time\":true}"
-                "Ранее вы не были авторизованы в данном сервисе, " +
-                        "а я не понимаю, что мне пишут незнакомцы."
+                "Я не понимаю вас. Возможно, для начала вам нужно " +
+                        "авторизоваться в сервисе"
             }
         } else {
             null
