@@ -79,7 +79,7 @@ class RedisListener(
                 val chanelName = Config().loadPath("database.redis.chanel")
                 val jedisPubSub = object : JedisPubSub() {
                     override fun onMessage(channel: String, message: String?) {
-                        println("Channel $channel has sent a message")
+                        logger.info("Channel $channel has sent a message")
                         if (!chanelName.isNullOrEmpty() && chanelName == chanel && !message.isNullOrEmpty()) {
                             val eventView = Gson().fromJson(message, EventView::class.java)
                             eventHandling(eventView)
@@ -87,7 +87,7 @@ class RedisListener(
                     }
 
                     override fun onSubscribe(channel: String?, subscribedChannels: Int) {
-                        println("Client is Subscribed to channel : " + channel!!)
+                        logger.info("We are subscribed to channel : " + channel!!)
                     }
 
                 }

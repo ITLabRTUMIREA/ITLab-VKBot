@@ -11,10 +11,22 @@ data class UserSettings(
 
     @Basic
     @Column(name = "vk_notification")
-    val vkNotification: Boolean = false,
+    val vkNotification: Boolean = true,
 
     @Basic
     @Column(name = "email_notification")
-    val emailNotification: Boolean = false
+    val emailNotification: Boolean = true,
+
+    @Basic
+    @Column(name = "vk_new_event_notification")
+    val newEventNotification: Boolean = true,
+
+    @Basic
+    @Column(name = "vk_change_event_notification")
+    val changeEventNotification: Boolean = true,
+
+    @Basic
+    @Column(name = "vk_confirm_event_notification")
+    val confirmEventNotification: Boolean = true
 
 )

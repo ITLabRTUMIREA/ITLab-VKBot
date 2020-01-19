@@ -113,15 +113,27 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                 else {
                     val msg = when (BotCommands.getEnumClassByCommandText(messageText)) {
 
-                        BotCommands.UnSubscribeEmail -> unSubscribe("email", databaseConnection)
+                        BotCommands.SubscribeEmail -> changeSubscriptionStatus("email", databaseConnection)
 
-                        BotCommands.UnSubscribeVk -> unSubscribe("vk", databaseConnection)
+                        BotCommands.SubscribeVk -> changeSubscriptionStatus("vk", databaseConnection)
 
-                        BotCommands.SubscribeEmail -> subscribe("email", databaseConnection)
+                        BotCommands.SubscribeChangeEvent -> changeSubscriptionStatus(
+                            "change_event",
+                            databaseConnection
+                        )
 
-                        BotCommands.SubscribeVk -> subscribe("vk", databaseConnection)
+                        BotCommands.SubscribeConfirmEvent -> changeSubscriptionStatus(
+                            "confirm_event"
+                            , databaseConnection
+                        )
 
-                        BotCommands.DeleteFromNotifyCenter -> deleteFromNotify(databaseConnection)
+                        BotCommands.SubscribeNewEvent -> changeSubscriptionStatus(
+                            "new_event",
+                            databaseConnection
+                        )
+
+                        BotCommands.DeleteFromNotifyCenter
+                        -> deleteFromNotify(databaseConnection)
 
                         BotCommands.Help -> {
                             var result = "Комманды, которые я знаю: \n"
@@ -140,13 +152,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                     msg
                 }
             } else {
-                val res = databaseConnection.addEntity(
-                    UserSettings(
-                        id,
-                        vkNotification = true,
-                        emailNotification = true
-                    )
-                )
+                val res = databaseConnection.addEntity(UserSettings(id))
 
                 if (res) {
                     keyboard = getKeyboardJson(vkId, databaseConnection)
@@ -167,13 +173,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                 }
 
                 if (id != null && email != null) {
-                    val res = databaseConnection.addEntity(
-                        UserSettings(
-                            id,
-                            vkNotification = true,
-                            emailNotification = true
-                        )
-                    )
+                    val res = databaseConnection.addEntity(UserSettings(id))
                     if (res) {
                         keyboard = getKeyboardJson(vkId, databaseConnection)
                         sendEmail(setOf(email!!))
@@ -201,13 +201,13 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
         return if (!id.isNullOrBlank() &&
             databaseConnection.deleteEntities(id!!, UserSettings())
         ) {
-            "Ваши эксклюзивные данные были удалины из базы данных данного сервиса"
+            "Ваши данные были удалины из базы данных данного сервиса"
         } else {
             "Произошла ошибка отвязки вашего аккаунта от данного сервиса"
         }
     }
 
-    private fun unSubscribe(typeNotice: String, databaseConnection: HibernateUtil): String {
+    private fun changeSubscriptionStatus(typeNotice: String, databaseConnection: HibernateUtil): String {
 
         val personInfo = if (!id.isNullOrBlank())
             databaseConnection.getEntityById(id!!, UserSettings())
@@ -217,15 +217,30 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
         return if (personInfo != null) {
             val result = when (typeNotice) {
                 "vk" -> {
-                    val newPersonInfo = personInfo.copy(vkNotification = false)
+                    val newPersonInfo = personInfo.copy(vkNotification = !personInfo.vkNotification)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotification = false)
+                    val newPersonInfo = personInfo.copy(emailNotification = !personInfo.emailNotification)
+                    databaseConnection.updateEntity(newPersonInfo)
+                }
+                "new_event" -> {
+                    val newPersonInfo = personInfo.copy(newEventNotification = !personInfo.vkNotification)
+                    databaseConnection.updateEntity(newPersonInfo)
+                }
+
+                "change_event" -> {
+                    val newPersonInfo = personInfo.copy(changeEventNotification = !personInfo.vkNotification)
+                    databaseConnection.updateEntity(newPersonInfo)
+                }
+
+                "confirm_event" -> {
+                    val newPersonInfo = personInfo.copy(confirmEventNotification = !personInfo.vkNotification)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 else -> false
             }
+
             if (result)
                 "Вы успешно отписаны от $typeNotice рассылки!"
             else
@@ -233,33 +248,6 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
         } else
             "Произошла ошибка при получении ваших данных из базы данных"
 
-    }
-
-    private fun subscribe(typeNotice: String, databaseConnection: HibernateUtil): String {
-
-        val personInfo = if (!id.isNullOrBlank())
-            databaseConnection.getEntityById(id!!, UserSettings())
-        else
-            null
-
-        return if (personInfo != null) {
-            val result = when (typeNotice) {
-                "vk" -> {
-                    val newPersonInfo = personInfo.copy(vkNotification = true)
-                    databaseConnection.updateEntity(newPersonInfo)
-                }
-                "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotification = true)
-                    databaseConnection.updateEntity(newPersonInfo)
-                }
-                else -> false
-            }
-            if (result)
-                "Вы успешно подписаны на $typeNotice рассылки!"
-            else
-                "Произошла ошибка при обновлении ваших данных при отписке от $typeNotice рассылки"
-        } else
-            "Произошла ошибка при получении ваших данных из базы данных"
     }
 
 }

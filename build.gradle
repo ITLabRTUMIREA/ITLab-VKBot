@@ -81,7 +81,6 @@ dependencies {
         exclude group: 'org.asynchttpclient', module: 'async-http-client'
     }
 
-    compile("com.konghq:unirest-java:$unirestjava_version")
     compile("redis.clients:jedis:$jedis_version")
     testCompile "io.ktor:ktor-server-tests:$ktor_version"
 }
