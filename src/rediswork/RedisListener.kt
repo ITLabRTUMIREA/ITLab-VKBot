@@ -87,7 +87,7 @@ class RedisListener(
                     }
 
                     override fun onSubscribe(channel: String?, subscribedChannels: Int) {
-                        println("Client is Subscribed to channel : " + channel!!)
+                        println("We are subscribed to channel : " + channel!!)
                     }
 
                 }

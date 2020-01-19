@@ -41,8 +41,8 @@ fun sendMail(
                 })
 
         val message = MimeMessage(session)
-        //val transport = session.getTransport("smtps") as SMTPTransport
-        //transport.connect(host, userMail, password)
+        val transport = session.getTransport("smtps") as SMTPTransport
+        transport.connect(host, userMail, password)
         message.setFrom(InternetAddress(from))
         message.setSubject(messageSubject, "UTF-8")
         message.setContent(messageContent, "text/html; charset = UTF-8")
@@ -53,10 +53,10 @@ fun sendMail(
             }
 
         if (!message.getRecipients(Message.RecipientType.TO).isNullOrEmpty())
-            Transport.send(message)
+            transport.sendMessage(message,message.allRecipients)
         println("HHHHHHHHHHHHEEEEEEEEEEEERRRRRRRRRRRRREEEEEEEEEEEEEEE")
         logger.info("All messages sent to emails! $receivers")
-
+        transport.close()
     } catch (ex: Exception) {
         logger.error(ex.message)
     }

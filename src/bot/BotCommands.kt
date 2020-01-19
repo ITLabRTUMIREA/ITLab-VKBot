@@ -4,11 +4,12 @@ package bot
  * A class that contains commands that a bot can execute
  */
 enum class BotCommands(val commandText: String) {
-    UnSubscribeVk("отписаться от vk рассылки"),
-    UnSubscribeEmail("отписаться от email рассылки"),
-    SubscribeEmail("подписаться на email рассылку"),
-    SubscribeVk("подписаться на vk рассылку"),
-    DeleteFromNotifyCenter("отвязать мои аккаунты от рассылок"),
+    SubscribeVk("Vk рассылка"),
+    SubscribeEmail("Email рассылка"),
+    SubscribeNewEvent("Создание события"),
+    SubscribeChangeEvent("Изменение события"),
+    SubscribeConfirmEvent("Подтверждение участия"),
+    DeleteFromNotifyCenter("отвязать мой аккаунт от рассылок"),
     Help("/help");
 
     companion object {

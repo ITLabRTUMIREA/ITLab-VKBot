@@ -15,10 +15,6 @@ class HibernateUtil {
     private var sessionFactory: SessionFactory? = null
     private var registry: StandardServiceRegistry? = null
 
-    fun createTable() {
-
-    }
-
     /**
      * Setup session (connect) to database
      */

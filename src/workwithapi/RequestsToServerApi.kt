@@ -8,7 +8,6 @@ import com.github.kittinunf.fuel.httpPost
 import com.google.gson.Gson
 import database.models.UserModelForAuth
 import utils.Config
-import kong.unirest.Unirest
 import com.google.gson.JsonObject
 import messageprocessing.responses.event.DataView
 
@@ -28,31 +27,32 @@ class RequestsToServerApi {
         val secretAuth = Config().loadPath("apiserver.secretAuth")
         val discoveryUri = Config().loadPath("apiserver.discoveryUri")
         val scope = Config().loadPath("apiserver.scope")
-        val response = if (!clientId.isNullOrBlank() &&
+        return if (!clientId.isNullOrBlank() &&
             !secretAuth.isNullOrBlank() &&
             !discoveryUri.isNullOrBlank() &&
             !scope.isNullOrBlank()
         ) {
-            Unirest.post(discoveryUri)
-                .header("content-type", "application/x-www-form-urlencoded")
+            val (_, _, result) = discoveryUri
+                .httpPost()
+                .header(
+                    "Content-Type" to "application/x-www-form-urlencoded"
+                )
                 .body("grant_type=client_credentials&scope=$scope&client_id=$clientId&client_secret=$secretAuth")
-                .asString()
-        } else {
-            null
-        }
-
-        return if (response != null && response.status == 200) {
-            val jsonObject = Gson().fromJson(response.body, JsonObject::class.java)
-            accessToken = jsonObject.get("access_token").asString
-            if (!accessToken.isNullOrEmpty()) {
-                logger.info("Token updated")
-                true
-            } else {
-                logger.info("Token is not updated")
-                false
+                .responseObject<JsonObject>()
+            when (result) {
+                is Result.Failure -> {
+                    val ex = result.getException().message
+                    logger.error("$ex , Access token not updated")
+                    false
+                }
+                is Result.Success -> {
+                    accessToken = result.get().get("access_token").asString
+                    logger.info("Access token updated")
+                    true
+                }
             }
         } else {
-            logger.info("Token is not updated")
+            logger.info("Error reading info from config")
             false
         }
     }

@@ -109,19 +109,39 @@ fun getKeyboardForCurrentPerson(
         if (user != null) {
             keyboardButtons.createLine()
             keyboardButtons.createLine()
+            keyboardButtons.createLine()
 
             if (user.vkNotification)
-                keyboardButtons.createButton(BotCommands.UnSubscribeVk.commandText, Color.RED)
+                keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.RED)
             else
                 keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.GREEN)
 
+            if (user.newEventNotification)
+                keyboardButtons.createButton(BotCommands.SubscribeNewEvent.commandText, Color.RED)
+            else
+                keyboardButtons.createButton(BotCommands.SubscribeNewEvent.commandText, Color.GREEN)
+
+            if (user.changeEventNotification)
+                keyboardButtons.createButton(BotCommands.SubscribeChangeEvent.commandText, Color.RED)
+            else
+                keyboardButtons.createButton(BotCommands.SubscribeChangeEvent.commandText, Color.GREEN)
+
+            if (user.confirmEventNotification)
+                keyboardButtons.createButton(BotCommands.SubscribeConfirmEvent.commandText, Color.RED)
+            else
+                keyboardButtons.createButton(BotCommands.SubscribeConfirmEvent.commandText, Color.GREEN)
+
             if (user.emailNotification)
-                keyboardButtons.createButton(BotCommands.UnSubscribeEmail.commandText, Color.RED)
+                keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.RED)
             else
                 keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.GREEN)
 
             keyboardButtons.addButtonToLine(0, 0)
-            keyboardButtons.addButtonToLine(1, 1)
+            keyboardButtons.addButtonToLine(2, 1)
+            keyboardButtons.addButtonToLine(2, 2)
+            keyboardButtons.addButtonToLine(2, 3)
+            keyboardButtons.addButtonToLine(1, 4)
+
         } else {
             logger.error("Can't get user in database by id")
         }
