@@ -13,7 +13,7 @@ class Config {
 
     val companion = Companion
 
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun loadConfig() {
         logger.info("Loading config")
@@ -63,7 +63,7 @@ class Config {
      */
     fun loadPath(path: String): String? {
         return if (config != null && config!!.hasPath(path)) {
-            logger.info("$path loaded from config")
+            logger.trace("$path loaded from config")
             config!!.getString(path)
         } else {
             logger.error("Can't load $path from config")

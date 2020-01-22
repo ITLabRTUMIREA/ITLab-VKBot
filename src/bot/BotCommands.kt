@@ -16,7 +16,7 @@ enum class BotCommands(val commandText: String) {
         fun getEnumClassByCommandText(commandText: String): BotCommands? {
             var result: BotCommands? = null
             for (botCommand in BotCommands.values()) {
-                if (botCommand.commandText == commandText.toLowerCase()) {
+                if (botCommand.commandText.toLowerCase() == commandText.toLowerCase()) {
                     result = botCommand
                     break
                 }

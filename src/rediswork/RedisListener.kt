@@ -16,7 +16,6 @@ import messageprocessing.responses.event.NotifyType
 import workwithapi.RequestsToServerApi
 import kotlin.concurrent.thread
 
-
 class RedisListener(
     private val databaseConnection: HibernateUtil,
     private val requestsToServerApi: RequestsToServerApi
@@ -28,7 +27,7 @@ class RedisListener(
 
         when (NotifyType.values()[eventView.type]) {
             NotifyType.EventNew -> {
-                logger.info("New Event Notification Request")
+                logger.trace("New event information received")
                 thread {
                     EventNew(eventView).process(
                         requestsToServerApi = requestsToServerApi,
@@ -37,7 +36,7 @@ class RedisListener(
                 }
             }
             NotifyType.EventChange -> {
-                logger.info("Modified Event Notification Request")
+                logger.trace("Change event information received")
                 thread {
                     EventChange(eventView).process(
                         requestsToServerApi = requestsToServerApi,
@@ -47,7 +46,7 @@ class RedisListener(
 
             }
             NotifyType.EventConfirm -> {
-                logger.info("Request for notification of participation in the event")
+                logger.trace("Confirm event information received")
                 thread {
                     EventConfirm(eventView).process(
                         requestsToServerApi = requestsToServerApi,
@@ -59,10 +58,9 @@ class RedisListener(
     }
 
     fun unsubscribe() {
-        logger.info("Redis closing subscribe")
         jedis!!.close()
         jedis = null
-        logger.info("Redis subscribe closed")
+        logger.debug("Redis subscribe closed")
     }
 
     fun listenEvents() {
@@ -75,11 +73,11 @@ class RedisListener(
             try {
                 jedis = Jedis(host, port)
                 jedis!!.auth(password)
-                logger.info("Connected to redis database!")
+                logger.trace("Connected to redis host")
                 val chanelName = Config().loadPath("database.redis.chanel")
                 val jedisPubSub = object : JedisPubSub() {
                     override fun onMessage(channel: String, message: String?) {
-                        logger.info("Channel $channel has sent a message")
+                        logger.debug("Channel $channel has sent a message")
                         if (!chanelName.isNullOrEmpty() && chanelName == chanel && !message.isNullOrEmpty()) {
                             val eventView = Gson().fromJson(message, EventView::class.java)
                             eventHandling(eventView)
@@ -87,7 +85,7 @@ class RedisListener(
                     }
 
                     override fun onSubscribe(channel: String?, subscribedChannels: Int) {
-                        logger.info("We are subscribed to channel : " + channel!!)
+                        logger.trace("Subscribed to : " + channel!!)
                     }
 
                 }
@@ -106,6 +104,4 @@ class RedisListener(
         }
 
     }
-
-
 }
