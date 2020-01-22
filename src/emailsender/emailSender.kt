@@ -7,7 +7,7 @@ import javax.mail.*
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
-private val logger = LoggerFactory.getLogger("emailSender")
+private val logger = LoggerFactory.getLogger("emailsender.emailSender")
 /**
  * Method for sending message to mail
  * @param userMail user login(email)
@@ -53,8 +53,7 @@ fun sendMail(
             }
 
         if (!message.getRecipients(Message.RecipientType.TO).isNullOrEmpty())
-            transport.sendMessage(message,message.allRecipients)
-        println("HHHHHHHHHHHHEEEEEEEEEEEERRRRRRRRRRRRREEEEEEEEEEEEEEE")
+            transport.sendMessage(message, message.allRecipients)
         logger.info("All messages sent to emails! $receivers")
         transport.close()
     } catch (ex: Exception) {

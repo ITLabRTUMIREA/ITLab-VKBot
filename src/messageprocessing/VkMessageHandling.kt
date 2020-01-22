@@ -14,7 +14,7 @@ import workwithapi.RequestsToServerApi
 
 class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : Handler() {
 
-    private val logger = LoggerFactory.getLogger(this.javaClass.name)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     private var email: String? = null
 

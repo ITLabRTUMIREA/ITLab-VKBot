@@ -19,7 +19,7 @@ abstract class Handler {
     private val transportClient = HttpTransportClient.getInstance()
     val vk = VkApiClient(transportClient)
     var actor: GroupActor? = null
-    private val logger = LoggerFactory.getLogger(this.javaClass.name)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
 
     init {
