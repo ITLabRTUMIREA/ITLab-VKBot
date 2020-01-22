@@ -20,9 +20,9 @@ class RequestsToServerApi {
     private var requestCount = 0
 
     private var apiUrl: String? = null
-
+    
     private fun updateToken(): Boolean {
-        logger.info("Sending request for update accessToken")
+        logger.trace("Sending request for update accessToken")
         val clientId = Config().loadPath("apiserver.clientId")
         val secretAuth = Config().loadPath("apiserver.secretAuth")
         val discoveryUri = Config().loadPath("apiserver.discoveryUri")
@@ -47,17 +47,18 @@ class RequestsToServerApi {
                 }
                 is Result.Success -> {
                     accessToken = result.get().get("access_token").asString
-                    logger.info("Access token updated")
+                    logger.trace("Access token updated")
                     true
                 }
             }
         } else {
-            logger.info("Error reading info from config")
+            logger.error("Error reading info from config")
             false
         }
     }
 
     fun getEventById(eventId: String): DataView? {
+        logger.trace("Sending request for getting event by id")
         return if (!accessToken.isNullOrBlank()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -113,6 +114,7 @@ class RequestsToServerApi {
     }
 
     fun getUserModelByVkId(vkId: String): User? {
+        logger.trace("Sending request for getting user by vkId")
         return if (!accessToken.isNullOrBlank()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -170,6 +172,7 @@ class RequestsToServerApi {
     }
 
     fun getUsers(): List<User>? {
+        logger.trace("Sending request for getting all users in service")
         return if (!accessToken.isNullOrBlank()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -246,6 +249,7 @@ class RequestsToServerApi {
         messageText: String,
         vkId: String
     ): User? {
+        logger.trace("Sending token for auth in service")
         return if (!accessToken.isNullOrEmpty()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {

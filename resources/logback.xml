@@ -13,6 +13,8 @@
     <logger name="io.netty" level="INFO"/>
     <logger name="org.hibernate" level="INFO"/>
     <logger name="io.lettuce" level="INFO"/>
-    <logger name="utils.Config " level="OFF"/>
+    <logger name="com.mchange.v2" level="INFO"/>
+    <logger name="com.mchange.v2" level="ERROR"/>
+    <logger name="utils.Config" level="DEBUG"/>
 
 </configuration>

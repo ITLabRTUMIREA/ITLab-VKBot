@@ -79,16 +79,23 @@ abstract class Handler {
         host = Config().loadPath("mail.host")
     )
 
-    open fun sendVk(user: User, event: Event) {
-        val vkId = getVkId(user)
-        if (vkId != null)
+    open fun sendVk(users: List<User>?, event: Event) {
+        val vkIds = mutableListOf<Int>()
+        if (users != null)
+            for (user in users) {
+                val vkId = getVkId(user)
+                if (vkId != null)
+                    vkIds.add(vkId)
+            }
+        if (vkIds.size != 0)
             vk.messages()
-                .send(actor, vkId)
+                .send(actor, vkIds)
                 .message(
                     event.concatenate()
                 ).execute()
 
     }
+
 
     open fun sendVk(message: String?, vkId: String?) {}
 
@@ -111,7 +118,7 @@ abstract class Handler {
 
                         Thread.sleep(4000)
                         if (user.vkNotification) {
-                            sendVk(it, currentNotification)
+                            sendVk(mutableListOf(it), currentNotification)
                         }
                         if (user.emailNotification) {
                             sendEmail(setOf(it.email!!), currentNotification)
@@ -145,7 +152,7 @@ abstract class Handler {
                             val currentNotify = notify.toName(user.firstName)
                             Thread.sleep(4000)
                             if (it.vkNotification) {
-                                sendVk(user, currentNotify)
+                                sendVk(mutableListOf(user), currentNotify)
                             }
                             if (it.emailNotification) {
                                 sendEmail(setOf(user.email!!), currentNotify)

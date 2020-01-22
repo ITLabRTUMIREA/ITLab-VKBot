@@ -109,38 +109,39 @@ fun getKeyboardForCurrentPerson(
         if (user != null) {
             keyboardButtons.createLine()
             keyboardButtons.createLine()
-            keyboardButtons.createLine()
+            //keyboardButtons.createLine()
 
             if (user.vkNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.RED)
-            else
                 keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.GREEN)
+            else
+                keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.RED)
 
             if (user.newEventNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeNewEvent.commandText, Color.RED)
-            else
                 keyboardButtons.createButton(BotCommands.SubscribeNewEvent.commandText, Color.GREEN)
+            else
+                keyboardButtons.createButton(BotCommands.SubscribeNewEvent.commandText, Color.RED)
 
             if (user.changeEventNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeChangeEvent.commandText, Color.RED)
-            else
                 keyboardButtons.createButton(BotCommands.SubscribeChangeEvent.commandText, Color.GREEN)
+            else
+                keyboardButtons.createButton(BotCommands.SubscribeChangeEvent.commandText, Color.RED)
 
             if (user.confirmEventNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeConfirmEvent.commandText, Color.RED)
-            else
                 keyboardButtons.createButton(BotCommands.SubscribeConfirmEvent.commandText, Color.GREEN)
+            else
+                keyboardButtons.createButton(BotCommands.SubscribeConfirmEvent.commandText, Color.RED)
 
             if (user.emailNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.RED)
-            else
                 keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.GREEN)
+            else
+                keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.RED)
 
             keyboardButtons.addButtonToLine(0, 0)
-            keyboardButtons.addButtonToLine(2, 1)
-            keyboardButtons.addButtonToLine(2, 2)
-            keyboardButtons.addButtonToLine(2, 3)
-            keyboardButtons.addButtonToLine(1, 4)
+            keyboardButtons.addButtonToLine(0, 4)
+            keyboardButtons.addButtonToLine(1, 1)
+            keyboardButtons.addButtonToLine(1, 2)
+            keyboardButtons.addButtonToLine(1, 3)
+
 
         } else {
             logger.error("Can't get user in database by id")

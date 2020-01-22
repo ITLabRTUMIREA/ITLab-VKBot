@@ -24,6 +24,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
 
 
     override fun sendEmail(destinationEmails: Set<String>, event: Event?) {
+        logger.trace("Sending email to user")
         val html = HtmlEmail()
 
         when (val apiUrl = Config().loadPath("apiserver.host")) {
@@ -79,6 +80,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     }
 
     private fun getKeyboardJson(vkId: String, databaseConnection: HibernateUtil): String {
+        logger.trace("Getting keyboard for user")
         var result = ""
 
         val keyboardClass = getKeyboardForCurrentPerson(requestsToServerApi, vkId, databaseConnection)
@@ -93,7 +95,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     }
 
     override fun process(inputJson: JsonObject?, databaseConnection: HibernateUtil) {
-
+        logger.trace("Processing message")
         val vkId = inputJson?.getAsJsonObject("object")?.get("from_id")?.asString
         val messageText = inputJson?.getAsJsonObject("object")?.get("text")?.asString
 
@@ -198,6 +200,8 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     }
 
     private fun deleteFromNotify(databaseConnection: HibernateUtil): String {
+        logger.debug("Deleting user from notify service")
+
         return if (!id.isNullOrBlank() &&
             databaseConnection.deleteEntities(id!!, UserSettings())
         ) {
@@ -208,43 +212,49 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     }
 
     private fun changeSubscriptionStatus(typeNotice: String, databaseConnection: HibernateUtil): String {
-
+        logger.trace("Changing $typeNotice status")
         val personInfo = if (!id.isNullOrBlank())
             databaseConnection.getEntityById(id!!, UserSettings())
         else
             null
 
         return if (personInfo != null) {
+            var status = false
             val result = when (typeNotice) {
                 "vk" -> {
-                    val newPersonInfo = personInfo.copy(vkNotification = !personInfo.vkNotification)
+                    status = !personInfo.vkNotification
+                    val newPersonInfo = personInfo.copy(vkNotification = status)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotification = !personInfo.emailNotification)
+                    status = !personInfo.emailNotification
+                    val newPersonInfo = personInfo.copy(emailNotification = status)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 "new_event" -> {
-                    val newPersonInfo = personInfo.copy(newEventNotification = !personInfo.vkNotification)
+                    status = !personInfo.newEventNotification
+                    val newPersonInfo = personInfo.copy(newEventNotification = status)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
 
                 "change_event" -> {
-                    val newPersonInfo = personInfo.copy(changeEventNotification = !personInfo.vkNotification)
+                    status = !personInfo.changeEventNotification
+                    val newPersonInfo = personInfo.copy(changeEventNotification = status)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
 
                 "confirm_event" -> {
-                    val newPersonInfo = personInfo.copy(confirmEventNotification = !personInfo.vkNotification)
+                    status = !personInfo.confirmEventNotification
+                    val newPersonInfo = personInfo.copy(confirmEventNotification = status)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 else -> false
             }
 
             if (result)
-                "Вы успешно отписаны от $typeNotice рассылки!"
+                "Статус $typeNotice рассылки изменен: ${if (status) "Подписан" else "Отписан"}"
             else
-                "Произошла ошибка при обновлении ваших данных при отписке от $typeNotice рассылки"
+                "Произошла ошибка при обновлении ваших данных $typeNotice рассылки"
         } else
             "Произошла ошибка при получении ваших данных из базы данных"
 
