@@ -35,6 +35,13 @@ abstract class Handler {
 
     open fun process(inputJson: JsonObject? = null, databaseConnection: HibernateUtil) {}
 
+    /**
+     * Function for processing notifications
+     * @param requestsToServerApi class for sending requests to host rtuitlab.ru
+     * @param databaseConnection class for sending requests to database
+     * @param eventView Event about sending notification
+     * @param notify class which stored message text
+     */
     open fun process(
         requestsToServerApi: RequestsToServerApi,
         databaseConnection: HibernateUtil,
@@ -49,14 +56,19 @@ abstract class Handler {
 
         val allUsersInService = requestsToServerApi.getUsers()?.toMutableList()
 
-        logger.info("Num of users in database before invite sending = ${allUsersInDatabase?.size}")
+        logger.trace("Num of users in database before invite sending = ${allUsersInDatabase?.size}")
         allUsersInDatabase = sendToInvitedUsers(allUsersInDatabase, invitedUsers, notify!!)
-        logger.info("Num of users in database after invite sending = ${allUsersInDatabase?.size}")
+        logger.trace("Num of users in database after invite sending = ${allUsersInDatabase?.size}")
 
         if (!allUsersInDatabase.isNullOrEmpty())
             sendToUsersNotification(allUsersInService, allUsersInDatabase, notify)
     }
 
+    /**
+     * Function for getting vk id from user
+     * @param user
+     * @return vk id if found else null
+     */
     open fun getVkId(user: User): Int? {
         val vkId = Config().loadPath("propertiesIds.vk")
         for (it in user.properties) {
@@ -71,7 +83,11 @@ abstract class Handler {
         return null
     }
 
-    fun loadConfigurationsForEmail(): EmailConfiguration = EmailConfiguration(
+    /**
+     * Function for loading from config parameters for email notification
+     * @return class with parameters
+     */
+    fun loadConfigurationsForEmail() = EmailConfiguration(
         email = Config().loadPath("mail.email"),
         password = Config().loadPath("mail.password"),
         subject = Config().loadPath("mail.subject"),
@@ -99,13 +115,28 @@ abstract class Handler {
 
     open fun sendVk(message: String?, vkId: String?) {}
 
+    private fun checkNotification(userSettings: UserSettings, currentNotification: Event) =
+        ((userSettings.newEventNotification && currentNotification.params.contains("event_new")) ||
+                (userSettings.changeEventNotification && currentNotification.params.contains("event_change")) ||
+                (userSettings.confirmEventNotification && currentNotification.params.contains("event_confirm")))
+
+
+    private fun checkVkNotification(userSettings: UserSettings, currentNotification: Event) =
+        checkNotification(userSettings, currentNotification) && userSettings.vkNotification
+
+    private fun checkEmailNotification(userSettings: UserSettings, currentNotification: Event) =
+        checkNotification(userSettings, currentNotification) && userSettings.emailNotification
+
     open fun sendToInvitedUsers(
         allUsersInDatabase: MutableList<UserSettings>?,
         invitedUsers: MutableList<User>?,
         notify: Event
     ): MutableList<UserSettings>? {
         if (!invitedUsers.isNullOrEmpty()) {
-
+            val notificationType = getNotificationType()
+            val vkNotifyUsers = mutableSetOf<User>()
+            val emailsNotify = mutableSetOf<String>()
+            var currentNotification = notify.invite()
             for (it in invitedUsers) {
                 var userToDelete: UserSettings? = null
 
@@ -113,15 +144,19 @@ abstract class Handler {
                     val user = findUserSettingsById(it.id, allUsersInDatabase)
                     if (user != null) {
                         userToDelete = user
-                        val currentNotification = notify.invite().toName(it.firstName)
-                        logger.info("User with id = ${user.id} invited")
+                        if (notificationType == 1) {
+                            currentNotification = currentNotification.toName(it.firstName)
+                            logger.info("User with id = ${user.id} invited")
+                            sendNotificationTypeOne(user, it, currentNotification)
 
-                        Thread.sleep(4000)
-                        if (user.vkNotification) {
-                            sendVk(mutableListOf(it), currentNotification)
-                        }
-                        if (user.emailNotification) {
-                            sendEmail(setOf(it.email!!), currentNotification)
+                        } else if (notificationType == 2) {
+
+                            if (checkVkNotification(user, currentNotification))
+                                vkNotifyUsers.add(it)
+
+                            if (checkEmailNotification(user, currentNotification))
+                                emailsNotify.add(it.email!!)
+
                         }
                     }
 
@@ -132,11 +167,46 @@ abstract class Handler {
                     break
                 }
             }
+            if (notificationType == 2) {
+                sendNotificationTypeTwo(vkNotifyUsers, emailsNotify, currentNotification)
+            }
+
         }
 
         return allUsersInDatabase
     }
 
+    private fun getNotificationType(): Int {
+        var notificationType = Config().loadPath("notification.type")?.toIntOrNull()
+        if (notificationType == null) {
+            notificationType = 2
+            logger.trace("Notification type = 2 by default")
+        }
+        return notificationType
+    }
+
+    private fun sendNotificationTypeOne(userSetting: UserSettings, user: User, currentNotification: Event) {
+        Thread.sleep(4000)
+
+        if (checkVkNotification(userSetting, currentNotification))
+            sendVk(mutableListOf(user), currentNotification)
+
+        if (checkEmailNotification(userSetting, currentNotification))
+            sendEmail(setOf(user.email!!), currentNotification)
+
+    }
+
+    private fun sendNotificationTypeTwo(
+        vkNotifyUsers: Set<User>,
+        emailsNotify: Set<String>,
+        currentNotification: Event
+    ) {
+        if (!vkNotifyUsers.isNullOrEmpty())
+            sendVk(vkNotifyUsers.toList(), currentNotification)
+
+        if (!emailsNotify.isNullOrEmpty())
+            sendEmail(emailsNotify, currentNotification)
+    }
 
     open fun sendToUsersNotification(
         allUsersInService: MutableList<User>?,
@@ -144,18 +214,23 @@ abstract class Handler {
         notify: Event
     ) {
         if (allUsersInDatabase != null) {
+            val notificationType = getNotificationType()
+            val vkNotifyUsers = mutableSetOf<User>()
+            val emailsNotify = mutableSetOf<String>()
             for (it in allUsersInDatabase) {
                 if (allUsersInService != null) {
                     val user = findUserById(it.id!!, allUsersInService)
                     if (user != null) {
                         if (user.id == it.id) {
-                            val currentNotify = notify.toName(user.firstName)
-                            Thread.sleep(4000)
-                            if (it.vkNotification) {
-                                sendVk(mutableListOf(user), currentNotify)
-                            }
-                            if (it.emailNotification) {
-                                sendEmail(setOf(user.email!!), currentNotify)
+                            val currentNotification = notify.toName(user.firstName)
+                            if (notificationType == 1) {
+                                sendNotificationTypeOne(it, user, currentNotification)
+                            } else if (notificationType == 2) {
+                                if (checkVkNotification(it, currentNotification))
+                                    vkNotifyUsers.add(user)
+
+                                if (checkEmailNotification(it, currentNotification))
+                                    emailsNotify.add(user.email!!)
                             }
                             allUsersInService.remove(user)
                         }
@@ -163,6 +238,9 @@ abstract class Handler {
                         logger.error("User with id = ${user?.id} not found in service database")
                     }
                 }
+            }
+            if (notificationType == 2) {
+                sendNotificationTypeTwo(vkNotifyUsers, emailsNotify, notify)
             }
         }
     }
@@ -183,6 +261,11 @@ abstract class Handler {
         return null
     }
 
+    /**
+     * Function for sending email notifications to emails
+     * @param destinationEmails emails on which we sending notification
+     * @param event notification information (message)
+     */
     open fun sendEmail(destinationEmails: Set<String>, event: Event? = null) {
         val html = HtmlEmail()
         val emailNotify = event!!.getForEmailNotice()
