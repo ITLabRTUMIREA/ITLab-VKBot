@@ -95,8 +95,11 @@ abstract class Handler {
         host = Config().loadPath("mail.host")
     )
 
-    //TODO: Comments to methods
-
+    /**
+     * Sending notification to vk
+     * @param users list of User to which we sending notify
+     * @param event message for notify
+     */
     open fun sendVk(users: List<User>?, event: Event) {
         val vkIds = mutableListOf<Int>()
         if (users != null)
@@ -114,21 +117,41 @@ abstract class Handler {
 
     }
 
-
     open fun sendVk(message: String?, vkId: String?) {}
 
+    /**
+     * Check user for notifications
+     * @param userSettings UserSettings database class
+     * @param currentNotification message for notify
+     */
     private fun checkNotification(userSettings: UserSettings, currentNotification: Event) =
         ((userSettings.newEventNotification && currentNotification.params.contains("event_new")) ||
                 (userSettings.changeEventNotification && currentNotification.params.contains("event_change")) ||
                 (userSettings.confirmEventNotification && currentNotification.params.contains("event_confirm")))
 
-
+    /**
+     * Check user for vk notification
+     * @param userSettings UserSettings database class
+     * @param currentNotification message for notify
+     */
     private fun checkVkNotification(userSettings: UserSettings, currentNotification: Event) =
         checkNotification(userSettings, currentNotification) && userSettings.vkNotification
 
+    /**
+     * Check user for email notification
+     * @param userSettings UserSettings database class
+     * @param currentNotification message for notify
+     */
     private fun checkEmailNotification(userSettings: UserSettings, currentNotification: Event) =
         checkNotification(userSettings, currentNotification) && userSettings.emailNotification
 
+    /**
+     * Sending notification to invited users
+     * @param allUsersInDatabase users from database
+     * @param invitedUsers users which invited to event
+     * @param notify message for notify
+     * @return list of database users which is not invited
+     */
     open fun sendToInvitedUsers(
         allUsersInDatabase: MutableList<UserSettings>?,
         invitedUsers: MutableList<User>?,
@@ -179,6 +202,9 @@ abstract class Handler {
         return allUsersInDatabase
     }
 
+    /**
+     * Getting type of service notification
+     */
     protected fun getNotificationType(): Int {
         var notificationType = Config().loadPath("notification.type")?.toIntOrNull()
         if (notificationType == null) {
@@ -188,6 +214,12 @@ abstract class Handler {
         return notificationType
     }
 
+    /**
+     * Sending first type notification (with user name)
+     * @param userSetting user model from database
+     * @param user user module from rtuitlab service
+     * @param currentNotification message for notify
+     */
     private fun sendNotificationTypeOne(userSetting: UserSettings, user: User, currentNotification: Event) {
         Thread.sleep(4000)
 
@@ -199,6 +231,12 @@ abstract class Handler {
 
     }
 
+    /**
+     * Sending second type notification (without user name)
+     * @param vkNotifyUsers list of vk id to which we send notification
+     * @param emailsNotify list of emails to which we send notification
+     * @param currentNotification message for notify
+     */
     private fun sendNotificationTypeTwo(
         vkNotifyUsers: Set<User>,
         emailsNotify: Set<String>,
@@ -211,6 +249,13 @@ abstract class Handler {
             sendEmail(emailsNotify, currentNotification)
     }
 
+    /**
+     * Sending notification to users that was not invited
+     * @param allUsersInService list of users from rtuitlab service
+     * @param allUsersInDatabase list of users from database
+     * @param notify message for notify
+     * @return list of database users which is not invited
+     */
     open fun sendToUsersNotification(
         allUsersInService: MutableList<User>?,
         allUsersInDatabase: MutableList<UserSettings>?,
@@ -250,6 +295,12 @@ abstract class Handler {
         }
     }
 
+    /**
+     * Finding user by id from list of users
+     * @param id id user which we must to find
+     * @param users The list of users in which we are looking
+     * @return User with given id
+     */
     open fun findUserById(id: String, users: MutableList<User>): User? {
         for (user in users) {
             if (user.id == id)
@@ -258,6 +309,12 @@ abstract class Handler {
         return null
     }
 
+    /**
+     * Finding user by id from list of usersSettings
+     * @param id id user which we must to find
+     * @param usersSettings The list of users in which we are looking
+     * @return userSetting with given id
+     */
     open fun findUserSettingsById(id: String, usersSettings: MutableList<UserSettings>): UserSettings? {
         for (user in usersSettings) {
             if (user.id == id)
