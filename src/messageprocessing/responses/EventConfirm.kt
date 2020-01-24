@@ -32,12 +32,15 @@ class EventConfirm(private val eventView: EventView) : Handler() {
 
         if (user != null) {
             logger.info("Sending notification to ${this.eventView.data.user?.id}")
-            this.notify.toName(this.eventView.data.user!!.firstName)
+            val notificationType = getNotificationType()
+            if (notificationType == 1)
+                this.notify.toName(this.eventView.data.user!!.firstName)
+
             if (user.vkNotification) {
-                sendVk(mutableListOf(this.eventView.data.user), this.notify)
+                sendVk(mutableListOf(this.eventView.data.user!!), this.notify)
             }
             if (user.emailNotification) {
-                sendEmail(setOf(this.eventView.data.user.email!!), this.notify)
+                sendEmail(setOf(this.eventView.data.user!!.email!!), this.notify)
             }
         }
     }

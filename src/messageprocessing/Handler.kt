@@ -95,6 +95,8 @@ abstract class Handler {
         host = Config().loadPath("mail.host")
     )
 
+    //TODO: Comments to methods
+
     open fun sendVk(users: List<User>?, event: Event) {
         val vkIds = mutableListOf<Int>()
         if (users != null)
@@ -136,7 +138,7 @@ abstract class Handler {
             val notificationType = getNotificationType()
             val vkNotifyUsers = mutableSetOf<User>()
             val emailsNotify = mutableSetOf<String>()
-            var currentNotification = notify.invite()
+            notify.invite()
             for (it in invitedUsers) {
                 var userToDelete: UserSettings? = null
 
@@ -144,17 +146,18 @@ abstract class Handler {
                     val user = findUserSettingsById(it.id, allUsersInDatabase)
                     if (user != null) {
                         userToDelete = user
+                        logger.debug("$notificationType Notification type")
                         if (notificationType == 1) {
-                            currentNotification = currentNotification.toName(it.firstName)
+                            notify.toName(it.firstName)
                             logger.info("User with id = ${user.id} invited")
-                            sendNotificationTypeOne(user, it, currentNotification)
+                            sendNotificationTypeOne(user, it, notify)
 
                         } else if (notificationType == 2) {
 
-                            if (checkVkNotification(user, currentNotification))
+                            if (checkVkNotification(user, notify))
                                 vkNotifyUsers.add(it)
 
-                            if (checkEmailNotification(user, currentNotification))
+                            if (checkEmailNotification(user, notify))
                                 emailsNotify.add(it.email!!)
 
                         }
@@ -168,7 +171,7 @@ abstract class Handler {
                 }
             }
             if (notificationType == 2) {
-                sendNotificationTypeTwo(vkNotifyUsers, emailsNotify, currentNotification)
+                sendNotificationTypeTwo(vkNotifyUsers, emailsNotify, notify)
             }
 
         }
@@ -176,7 +179,7 @@ abstract class Handler {
         return allUsersInDatabase
     }
 
-    private fun getNotificationType(): Int {
+    protected fun getNotificationType(): Int {
         var notificationType = Config().loadPath("notification.type")?.toIntOrNull()
         if (notificationType == null) {
             notificationType = 2
@@ -222,14 +225,16 @@ abstract class Handler {
                     val user = findUserById(it.id!!, allUsersInService)
                     if (user != null) {
                         if (user.id == it.id) {
-                            val currentNotification = notify.toName(user.firstName)
+
+                            logger.debug("$notificationType Notification type")
                             if (notificationType == 1) {
-                                sendNotificationTypeOne(it, user, currentNotification)
+                                notify.toName(user.firstName)
+                                sendNotificationTypeOne(it, user, notify)
                             } else if (notificationType == 2) {
-                                if (checkVkNotification(it, currentNotification))
+                                if (checkVkNotification(it, notify))
                                     vkNotifyUsers.add(user)
 
-                                if (checkEmailNotification(it, currentNotification))
+                                if (checkEmailNotification(it, notify))
                                     emailsNotify.add(user.email!!)
                             }
                             allUsersInService.remove(user)
