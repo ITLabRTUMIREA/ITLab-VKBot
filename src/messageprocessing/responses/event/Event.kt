@@ -41,6 +41,56 @@ class Event : Builder() {
         return addParams("event_invite", text) as Event
     }
 
+    private val days = mutableMapOf(
+        "Monday" to "Понедельник",
+        "Tuesday" to "Вторник",
+        "Wednesday" to "Среда",
+        "Thursday" to "Четверг",
+        "Friday" to "Пятница",
+        "Saturday" to "Суббота",
+        "Sunday" to "Воскресенье"
+    )
+
+    private val months = mutableMapOf(
+        "January" to "Января",
+        "February" to "Февраля",
+        "March" to "Марта",
+        "April" to "Апреля",
+        "May" to "Мая",
+        "June" to "Июня",
+        "July" to "Июля",
+        "August" to "Августа",
+        "September" to "Сентября",
+        "October" to "Октября",
+        "November" to "Ноября",
+        "December" to "Декабря"
+    )
+
+    /**
+     * Translate date text to russian
+     * @param date date which we translate
+     */
+    private fun dateToRussian(date: String): String {
+        var newDate = date
+        for ((key, value) in days) {
+            val newDateCheck = newDate.replace(key, value)
+            if (newDateCheck != newDate) {
+                newDate = newDateCheck
+                break
+            }
+        }
+
+        for ((key, value) in months) {
+            val newDateCheck = newDate.replace(key, value)
+            if (newDateCheck != newDate) {
+                newDate = newDateCheck
+                break
+            }
+        }
+        return newDate
+    }
+
+
     /**
      * 4
      */
@@ -48,8 +98,8 @@ class Event : Builder() {
         val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy, HH:mm")
         dateFormat.timeZone = TimeZone.getTimeZone("Europe/Moscow")
         val text = "Необходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                "\nНачало: ${dateFormat.format(eventView.beginTime().time)} по МСК" +
-                "\nОкончание: ${dateFormat.format(eventView.endTime().time)} по МСК" +
+                "\nНачало: ${dateToRussian(dateFormat.format(eventView.beginTime().time))} по МСК" +
+                "\nОкончание: ${dateToRussian(dateFormat.format(eventView.endTime().time))} по МСК" +
                 "\nАдрес: ${eventView.data.address}"
 
         return addParams("event_info", text) as Event
