@@ -24,7 +24,7 @@ fun MessagesSendQuery.keyboard(value: String): MessagesSendQuery {
  */
 data class Keyboard(val one_time: Boolean, val buttons: List<List<Button>>)
 
-private val logger = LoggerFactory.getLogger("Keyboard")
+private val logger = LoggerFactory.getLogger("bot.keyboard.Keyboard")
 
 /**
  * Buttons class for Keyboard

@@ -13,14 +13,14 @@ import messageprocessing.responses.event.DataView
 
 class RequestsToServerApi {
 
-    private val logger = LoggerFactory.getLogger(this.javaClass.name)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     private var accessToken: String? = null
 
     private var requestCount = 0
 
     private var apiUrl: String? = null
-    
+
     private fun updateToken(): Boolean {
         logger.trace("Sending request for update accessToken")
         val clientId = Config().loadPath("apiserver.clientId")

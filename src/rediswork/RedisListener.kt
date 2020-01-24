@@ -63,6 +63,8 @@ class RedisListener(
         logger.debug("Redis subscribe closed")
     }
 
+    private var connectionAttempt = 0
+
     fun listenEvents() {
         val password = Config().loadPath("database.redis.password")
         val port = Config().loadPath("database.redis.port")?.toInt()
@@ -93,6 +95,13 @@ class RedisListener(
                 jedis!!.subscribe(jedisPubSub, chanelName)
             } catch (ex: Exception) {
                 logger.error(ex.message)
+                if (connectionAttempt == 0) {
+                    logger.trace("Trying to reconnect")
+                    connectionAttempt += 1
+                    listenEvents()
+                } else {
+                    connectionAttempt = 0
+                }
             } finally {
                 jedis?.close()
             }

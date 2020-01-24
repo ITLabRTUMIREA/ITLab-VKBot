@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import utils.Config
 
 class HibernateUtil {
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private var sessionFactory: SessionFactory? = null
     private var registry: StandardServiceRegistry? = null
 
