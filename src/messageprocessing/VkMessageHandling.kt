@@ -7,6 +7,7 @@ import bot.BotCommands
 import database.HibernateUtil
 import database.schema.UserSettings
 import emailsender.*
+import kotlinx.coroutines.Delay
 import org.slf4j.LoggerFactory
 import messageprocessing.responses.event.Event
 import utils.Config
@@ -98,7 +99,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
         logger.trace("Processing message")
         val vkId = inputJson?.getAsJsonObject("object")?.get("from_id")?.asString
         val messageText = inputJson?.getAsJsonObject("object")?.get("text")?.asString
-
+        val prefixForBroadcast = Config().loadPath("broadcast.prefix")
         var userModel = if (!vkId.isNullOrEmpty())
             requestsToServerApi.getUserModelByVkId(vkId)
         else
@@ -110,9 +111,19 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
             if (databaseConnection.isUserInDatabase(id!!)) {
                 keyboard = getKeyboardJson(vkId, databaseConnection)
 
-                if (messageText.startsWith("L:"))
+                if (messageText.startsWith("L:")) {
                     "Вы уже авторизованы в этом сервисе &#10084;"
-                else {
+                } else if (!prefixForBroadcast.isNullOrBlank() && messageText.startsWith(prefixForBroadcast)) {
+                    logger.trace("Sending broadcast message to users")
+                    val usersToNotify = databaseConnection.getEntities(UserSettings())
+                    val allUsers = requestsToServerApi.getUsers()
+                    if (!usersToNotify.isNullOrEmpty() && !allUsers.isNullOrEmpty()) {
+                        val users = getUsersFromUserSettings(allUsers, usersToNotify, vkId.toInt())
+                        sendVk(users, messageText.removePrefix(prefixForBroadcast))
+                    }
+                    Thread.sleep(5000)
+                    "Ваш запрос выполнен"
+                } else {
                     val msg = when (BotCommands.getEnumClassByCommandText(messageText)) {
 
                         BotCommands.SubscribeEmail -> changeSubscriptionStatus("email", databaseConnection)
