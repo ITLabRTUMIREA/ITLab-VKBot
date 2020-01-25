@@ -117,7 +117,50 @@ abstract class Handler {
 
     }
 
+    /**
+     * Sending message to vk
+     * @param users list of User to which we sending notify
+     * @param message message for notify
+     */
+    open fun sendVk(users: List<User>?, message: String?) {
+        val vkIds = mutableListOf<Int>()
+        if (users != null)
+            for (user in users) {
+                val vkId = getVkId(user)
+                if (vkId != null)
+                    vkIds.add(vkId)
+            }
+        if (vkIds.size != 0)
+            vk.messages()
+                .send(actor, vkIds)
+                .message(
+                    message
+                ).execute()
+
+    }
+
     open fun sendVk(message: String?, vkId: String?) {}
+
+    /**
+     * Getting intersections users and userSettings except for the sender
+     * @param users list of User class
+     * @param userSettings List of UserSettings class
+     * @return intersections of users and userSettings
+     */
+    open fun getUsersFromUserSettings(users: List<User>, userSettings: List<UserSettings>, senderId: Int): List<User> {
+        val intersections = mutableListOf<User>()
+        val currentUsers = users.toMutableList()
+        userSettings.forEach {
+            if (!users.isNullOrEmpty()) {
+                val user = findUserById(it.id!!, currentUsers)
+                if (user != null && getVkId(user) != senderId) {
+                    currentUsers.remove(user)
+                    intersections.add(user)
+                }
+            }
+        }
+        return intersections
+    }
 
     /**
      * Check user for notifications

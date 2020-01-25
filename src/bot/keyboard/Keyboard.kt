@@ -112,27 +112,27 @@ fun getKeyboardForCurrentPerson(
             //keyboardButtons.createLine()
 
             if (user.vkNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.GREEN)
+                keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.BLUE)
             else
                 keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.RED)
 
             if (user.newEventNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeNewEvent.commandText, Color.GREEN)
+                keyboardButtons.createButton("&#10133;", Color.BLUE)
             else
-                keyboardButtons.createButton(BotCommands.SubscribeNewEvent.commandText, Color.RED)
+                keyboardButtons.createButton("&#10133;", Color.RED)
 
             if (user.changeEventNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeChangeEvent.commandText, Color.GREEN)
+                keyboardButtons.createButton("&#10135;", Color.BLUE)
             else
-                keyboardButtons.createButton(BotCommands.SubscribeChangeEvent.commandText, Color.RED)
+                keyboardButtons.createButton("&#10135;", Color.RED)
 
             if (user.confirmEventNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeConfirmEvent.commandText, Color.GREEN)
+                keyboardButtons.createButton("&#10004;", Color.BLUE)
             else
-                keyboardButtons.createButton(BotCommands.SubscribeConfirmEvent.commandText, Color.RED)
+                keyboardButtons.createButton("&#10004;", Color.RED)
 
             if (user.emailNotification)
-                keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.GREEN)
+                keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.BLUE)
             else
                 keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.RED)
 
