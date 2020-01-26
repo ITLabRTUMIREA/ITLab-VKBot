@@ -149,7 +149,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                         -> deleteFromNotify(databaseConnection)
 
                         BotCommands.Help -> {
-                            var result = "Комманды, которые я знаю: \n"
+                            var result = "Команды, которые я знаю: \n"
                             BotCommands.values().forEach {
                                 if (it.commandText != "/help")
                                     result += it.commandText + "\n"
