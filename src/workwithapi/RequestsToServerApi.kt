@@ -8,13 +8,12 @@ import com.github.kittinunf.fuel.httpPost
 import com.google.gson.Gson
 import database.models.UserModelForAuth
 import utils.Config
-import kong.unirest.Unirest
 import com.google.gson.JsonObject
 import messageprocessing.responses.event.DataView
 
 class RequestsToServerApi {
 
-    private val logger = LoggerFactory.getLogger(this.javaClass.name)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     private var accessToken: String? = null
 
@@ -23,41 +22,43 @@ class RequestsToServerApi {
     private var apiUrl: String? = null
 
     private fun updateToken(): Boolean {
-        logger.info("Sending request for update accessToken")
+        logger.trace("Sending request for update accessToken")
         val clientId = Config().loadPath("apiserver.clientId")
         val secretAuth = Config().loadPath("apiserver.secretAuth")
         val discoveryUri = Config().loadPath("apiserver.discoveryUri")
         val scope = Config().loadPath("apiserver.scope")
-        val response = if (!clientId.isNullOrBlank() &&
+        return if (!clientId.isNullOrBlank() &&
             !secretAuth.isNullOrBlank() &&
             !discoveryUri.isNullOrBlank() &&
             !scope.isNullOrBlank()
         ) {
-            Unirest.post(discoveryUri)
-                .header("content-type", "application/x-www-form-urlencoded")
+            val (_, _, result) = discoveryUri
+                .httpPost()
+                .header(
+                    "Content-Type" to "application/x-www-form-urlencoded"
+                )
                 .body("grant_type=client_credentials&scope=$scope&client_id=$clientId&client_secret=$secretAuth")
-                .asString()
-        } else {
-            null
-        }
-
-        return if (response != null && response.status == 200) {
-            val jsonObject = Gson().fromJson(response.body, JsonObject::class.java)
-            accessToken = jsonObject.get("access_token").asString
-            if (!accessToken.isNullOrEmpty()) {
-                logger.info("Token updated")
-                true
-            } else {
-                logger.info("Token is not updated")
-                false
+                .responseObject<JsonObject>()
+            when (result) {
+                is Result.Failure -> {
+                    val ex = result.getException().message
+                    logger.error("$ex , Access token not updated")
+                    false
+                }
+                is Result.Success -> {
+                    accessToken = result.get().get("access_token").asString
+                    logger.trace("Access token updated")
+                    true
+                }
             }
         } else {
-            logger.info("Token is not updated")
+            logger.error("Error reading info from config")
             false
         }
     }
 
     fun getEventById(eventId: String): DataView? {
+        logger.trace("Sending request for getting event by id")
         return if (!accessToken.isNullOrBlank()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -113,6 +114,7 @@ class RequestsToServerApi {
     }
 
     fun getUserModelByVkId(vkId: String): User? {
+        logger.trace("Sending request for getting user by vkId")
         return if (!accessToken.isNullOrBlank()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -170,6 +172,7 @@ class RequestsToServerApi {
     }
 
     fun getUsers(): List<User>? {
+        logger.trace("Sending request for getting all users in service")
         return if (!accessToken.isNullOrBlank()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {
@@ -246,6 +249,7 @@ class RequestsToServerApi {
         messageText: String,
         vkId: String
     ): User? {
+        logger.trace("Sending token for auth in service")
         return if (!accessToken.isNullOrEmpty()) {
             apiUrl = Config().loadPath("apiserver.host")
             if (!apiUrl.isNullOrBlank()) {

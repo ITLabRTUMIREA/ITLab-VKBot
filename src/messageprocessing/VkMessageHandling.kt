@@ -7,6 +7,7 @@ import bot.BotCommands
 import database.HibernateUtil
 import database.schema.UserSettings
 import emailsender.*
+import kotlinx.coroutines.Delay
 import org.slf4j.LoggerFactory
 import messageprocessing.responses.event.Event
 import utils.Config
@@ -14,7 +15,7 @@ import workwithapi.RequestsToServerApi
 
 class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : Handler() {
 
-    private val logger = LoggerFactory.getLogger(this.javaClass.name)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     private var email: String? = null
 
@@ -23,7 +24,8 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     private var keyboard = "{\"buttons\":[],\"one_time\":true}"
 
 
-    override fun sendEmail(destinationEmails: Set<String>, event: Event) {
+    override fun sendEmail(destinationEmails: Set<String>, event: Event?) {
+        logger.trace("Sending email to user")
         val html = HtmlEmail()
 
         when (val apiUrl = Config().loadPath("apiserver.host")) {
@@ -79,6 +81,7 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     }
 
     private fun getKeyboardJson(vkId: String, databaseConnection: HibernateUtil): String {
+        logger.trace("Getting keyboard for user")
         var result = ""
 
         val keyboardClass = getKeyboardForCurrentPerson(requestsToServerApi, vkId, databaseConnection)
@@ -93,10 +96,10 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     }
 
     override fun process(inputJson: JsonObject?, databaseConnection: HibernateUtil) {
-
+        logger.trace("Processing message")
         val vkId = inputJson?.getAsJsonObject("object")?.get("from_id")?.asString
         val messageText = inputJson?.getAsJsonObject("object")?.get("text")?.asString
-
+        val prefixForBroadcast = Config().loadPath("broadcast.prefix")
         var userModel = if (!vkId.isNullOrEmpty())
             requestsToServerApi.getUserModelByVkId(vkId)
         else
@@ -108,28 +111,45 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
             if (databaseConnection.isUserInDatabase(id!!)) {
                 keyboard = getKeyboardJson(vkId, databaseConnection)
 
-                if (messageText.startsWith("L:"))
-                    "По моему вы прислали код для авторизации " +
-                            "в данном сервисе. Мне не хотелось бы вас огорчать" +
-                            ", но к большому сожалению придется. Возможно вы даже " +
-                            "и не подозревали, что я скажу это, но я не могу вас авторизовать " +
-                            "так как по моим данным вы уже были авторизованы в нашем сервисе."
-                else {
+                if (messageText.startsWith("L:")) {
+                    "Вы уже авторизованы в этом сервисе &#10084;"
+                } else if (!prefixForBroadcast.isNullOrBlank() && messageText.startsWith(prefixForBroadcast)) {
+                    logger.trace("Sending broadcast message to users")
+                    val usersToNotify = databaseConnection.getEntities(UserSettings())
+                    val allUsers = requestsToServerApi.getUsers()
+                    if (!usersToNotify.isNullOrEmpty() && !allUsers.isNullOrEmpty()) {
+                        val users = getUsersFromUserSettings(allUsers, usersToNotify, vkId.toInt())
+                        sendVk(users, messageText.removePrefix(prefixForBroadcast))
+                    }
+                    Thread.sleep(5000)
+                    "Ваш запрос выполнен"
+                } else {
                     val msg = when (BotCommands.getEnumClassByCommandText(messageText)) {
 
-                        BotCommands.UnSubscribeEmail -> unSubscribe("email", databaseConnection)
+                        BotCommands.SubscribeEmail -> changeSubscriptionStatus("email", databaseConnection)
 
-                        BotCommands.UnSubscribeVk -> unSubscribe("vk", databaseConnection)
+                        BotCommands.SubscribeVk -> changeSubscriptionStatus("vk", databaseConnection)
 
-                        BotCommands.SubscribeEmail -> subscribe("email", databaseConnection)
+                        BotCommands.SubscribeChangeEvent -> changeSubscriptionStatus(
+                            "change_event",
+                            databaseConnection
+                        )
 
-                        BotCommands.SubscribeVk -> subscribe("vk", databaseConnection)
+                        BotCommands.SubscribeConfirmEvent -> changeSubscriptionStatus(
+                            "confirm_event"
+                            , databaseConnection
+                        )
 
-                        BotCommands.DeleteFromNotifyCenter -> deleteFromNotify(databaseConnection)
+                        BotCommands.SubscribeNewEvent -> changeSubscriptionStatus(
+                            "new_event",
+                            databaseConnection
+                        )
+
+                        BotCommands.DeleteFromNotifyCenter
+                        -> deleteFromNotify(databaseConnection)
 
                         BotCommands.Help -> {
-                            var result = "Возможные комманды, которые вы при большом " +
-                                    "желании можете мне лениво писать:\n"
+                            var result = "Комманды, которые я знаю: \n"
                             BotCommands.values().forEach {
                                 if (it.commandText != "/help")
                                     result += it.commandText + "\n"
@@ -138,30 +158,22 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                         }
 
                         null ->
-                            "Дорогой подписчик ! К большому для нас сожалению, и , может быть, для вас" +
-                                    ", но я вас не понимаю. Пожалуйста, изучите мой лексикон написав комманду \"/help\" " +
-                                    "и тогда в следующий раз я скорее всего смогу вас понять"
+                            "Я вас не понимаю, то, что я понимаю вы можете узнать написав комманду \"/help\""
 
                     }
                     keyboard = getKeyboardJson(vkId, databaseConnection)
                     msg
                 }
             } else {
-                val res = databaseConnection.addEntity(
-                    UserSettings(
-                        id,
-                        vkNotification = true,
-                        emailNotification = true
-                    )
-                )
+                val res = databaseConnection.addEntity(UserSettings(id))
 
                 if (res) {
                     keyboard = getKeyboardJson(vkId, databaseConnection)
-                    "Вы добавлены в базу данных рассылки!"
+                    "Вы добавлены в базу данных рассылки &#128519;"
                 } else {
                     keyboard = "{\"buttons\":[],\"one_time\":true}"
-                    "Мы знаем что вы добавляли vk id на сайт, " +
-                            "но по каким то причинам мы не можем добавить вас в базу данных"
+                    "Ранее вы уже добавляли vk id на сайт, но произошла ошибка " +
+                            "с добавлением вас в базу данных &#128546;"
                 }
             }
         } else if (!messageText.isNullOrEmpty()) {
@@ -174,37 +186,23 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
                 }
 
                 if (id != null && email != null) {
-                    val res = databaseConnection.addEntity(
-                        UserSettings(
-                            id,
-                            vkNotification = true,
-                            emailNotification = true
-                        )
-                    )
+                    val res = databaseConnection.addEntity(UserSettings(id))
                     if (res) {
                         keyboard = getKeyboardJson(vkId, databaseConnection)
-                        "Спасибо, за авторизацию в центре уведомлений" +
-                                " RTUITLAB, теперь у меня +1 человек, чтобы заваливать" +
-                                " его возможно важной для него информацией"
+                        sendEmail(setOf(email!!))
+                        "Поздравляем!, вы авторизовались в этом сервисе &#128293;&#128293;&#128293;"
                     } else {
                         keyboard = "{\"buttons\":[],\"one_time\":true}"
-                        "По непредвиденным для нас обстоятельствам" +
-                                " во время вашей авторизации что-то пошло не" +
-                                " так с добавлением вас в базу данных," +
-                                " если вы взволнованы произошедшим, то сообщите" +
-                                " кому-нибудь, кто возмжно знает решение проблемы"
+                        "Произошла ошибка во время добавления вас в базу данных &#128546;"
                     }
                 } else {
                     keyboard = "{\"buttons\":[],\"one_time\":true}"
-                    "По непредвиденным для нас обстоятельствам" +
-                            " во время вашей авторизации что-то пошло не" +
-                            " так, если вы взволнованы произошедшим, то сообщите" +
-                            " кому-нибудь, кто возмжно знает решение проблемы"
+                    "Произошла ошибка во время вашей авторизации. Возможно не верный код авторизации &#128546;"
                 }
             } else {
                 keyboard = "{\"buttons\":[],\"one_time\":true}"
-                "Ранее вы не были авторизованы в данном сервисе, " +
-                        "а я не понимаю, что мне пишут незнакомцы."
+                "Я не понимаю вас. Возможно, для начала вам нужно " +
+                        "авторизоваться в сервисе"
             }
         } else {
             null
@@ -213,68 +211,64 @@ class VKMessageHandling(private val requestsToServerApi: RequestsToServerApi) : 
     }
 
     private fun deleteFromNotify(databaseConnection: HibernateUtil): String {
+        logger.debug("Deleting user from notify service")
+
         return if (!id.isNullOrBlank() &&
             databaseConnection.deleteEntities(id!!, UserSettings())
         ) {
-            "Ваши эксклюзивные данные были удалины из базы данных данного сервиса"
+            "Ваши данные были удалины из базы данных данного сервиса"
         } else {
             "Произошла ошибка отвязки вашего аккаунта от данного сервиса"
         }
     }
 
-    private fun unSubscribe(typeNotice: String, databaseConnection: HibernateUtil): String {
-
+    private fun changeSubscriptionStatus(typeNotice: String, databaseConnection: HibernateUtil): String {
+        logger.trace("Changing $typeNotice status")
         val personInfo = if (!id.isNullOrBlank())
             databaseConnection.getEntityById(id!!, UserSettings())
         else
             null
 
         return if (personInfo != null) {
+            var status = false
             val result = when (typeNotice) {
                 "vk" -> {
-                    val newPersonInfo = personInfo.copy(vkNotification = false)
+                    status = !personInfo.vkNotification
+                    val newPersonInfo = personInfo.copy(vkNotification = status)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotification = false)
+                    status = !personInfo.emailNotification
+                    val newPersonInfo = personInfo.copy(emailNotification = status)
+                    databaseConnection.updateEntity(newPersonInfo)
+                }
+                "new_event" -> {
+                    status = !personInfo.newEventNotification
+                    val newPersonInfo = personInfo.copy(newEventNotification = status)
+                    databaseConnection.updateEntity(newPersonInfo)
+                }
+
+                "change_event" -> {
+                    status = !personInfo.changeEventNotification
+                    val newPersonInfo = personInfo.copy(changeEventNotification = status)
+                    databaseConnection.updateEntity(newPersonInfo)
+                }
+
+                "confirm_event" -> {
+                    status = !personInfo.confirmEventNotification
+                    val newPersonInfo = personInfo.copy(confirmEventNotification = status)
                     databaseConnection.updateEntity(newPersonInfo)
                 }
                 else -> false
             }
+
             if (result)
-                "Вы успешно отписаны от $typeNotice рассылки!"
+                "Статус $typeNotice рассылки изменен: ${if (status) "Подписан" else "Отписан"}"
             else
-                "Произошла ошибка при обновлении ваших данных при отписке от $typeNotice рассылки"
+                "Произошла ошибка при обновлении ваших данных $typeNotice рассылки"
         } else
             "Произошла ошибка при получении ваших данных из базы данных"
 
-    }
-
-    private fun subscribe(typeNotice: String, databaseConnection: HibernateUtil): String {
-
-        val personInfo = if (!id.isNullOrBlank())
-            databaseConnection.getEntityById(id!!, UserSettings())
-        else
-            null
-
-        return if (personInfo != null) {
-            val result = when (typeNotice) {
-                "vk" -> {
-                    val newPersonInfo = personInfo.copy(vkNotification = true)
-                    databaseConnection.updateEntity(newPersonInfo)
-                }
-                "email" -> {
-                    val newPersonInfo = personInfo.copy(emailNotification = true)
-                    databaseConnection.updateEntity(newPersonInfo)
-                }
-                else -> false
-            }
-            if (result)
-                "Вы успешно подписаны на $typeNotice рассылки!"
-            else
-                "Произошла ошибка при обновлении ваших данных при отписке от $typeNotice рассылки"
-        } else
-            "Произошла ошибка при получении ваших данных из базы данных"
     }
 
 }

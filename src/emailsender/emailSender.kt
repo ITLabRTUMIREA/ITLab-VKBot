@@ -3,11 +3,11 @@ package emailsender
 import com.sun.mail.smtp.SMTPTransport
 import org.slf4j.LoggerFactory
 import java.util.*
+import javax.mail.*
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
-import javax.mail.*
 
-private val logger = LoggerFactory.getLogger("emailSender")
+private val logger = LoggerFactory.getLogger("emailsender.emailSender")
 /**
  * Method for sending message to mail
  * @param userMail user login(email)
@@ -25,41 +25,39 @@ fun sendMail(
     receivers: Set<String>?, from: String? = userMail, port: String? = "465", host: String? = "smtp.gmail.com"
 ) {
     try {
-        //system properties
         val properties: Properties = System.getProperties()
+        properties["mail.smtp.host"] = host
+        properties["mail.smtp.auth"] = "true"
+        properties["mail.smtp.socketFactory.port"] = port
+        properties["mail.smtp.socketFactory.class"] = "javax.net.ssl.SSLSocketFactory"
+        properties["mail.smtp.port"] = port
 
-        //host
-        properties.setProperty("mail.smtps.host", host)
-        //class used to create SMTP sockets
-        properties.setProperty("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
-        //setting up port
-        properties.setProperty("mail.smtp.port", port)
-        //setting up port
-        properties.setProperty("mail.smtp.socketFactory.port", port)
-        //attempt to authenticate the user using the AUTH command
-        properties.setProperty("mail.smtps.auth", "true")
-
-        val session = Session.getDefaultInstance(properties, null)
+        val session =
+            Session.getDefaultInstance(properties,
+                object : Authenticator() {
+                    override fun getPasswordAuthentication(): PasswordAuthentication? {
+                        return PasswordAuthentication(userMail, password)
+                    }
+                })
 
         val message = MimeMessage(session)
         val transport = session.getTransport("smtps") as SMTPTransport
         transport.connect(host, userMail, password)
         message.setFrom(InternetAddress(from))
-        //theme of message
         message.setSubject(messageSubject, "UTF-8")
-        //text of message
         message.setContent(messageContent, "text/html; charset = UTF-8")
 
         if (receivers != null)
             for (receiver in receivers) {
                 message.addRecipient(Message.RecipientType.TO, InternetAddress(receiver))
             }
+
         if (!message.getRecipients(Message.RecipientType.TO).isNullOrEmpty())
             transport.sendMessage(message, message.allRecipients)
         logger.info("All messages sent to emails! $receivers")
         transport.close()
     } catch (ex: Exception) {
-        logger.error(ex.message + " (EMAIL NOTIFY)")
+        logger.error(ex.message)
     }
 }
 

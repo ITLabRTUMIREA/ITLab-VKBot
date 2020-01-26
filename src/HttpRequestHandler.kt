@@ -46,6 +46,8 @@ fun Application.module() {
     routing {
 
         get("/loadconfig") {
+            logger.debug("Reloading config")
+
             redisListener.unsubscribe()
             Config().loadConfig()
 
@@ -56,10 +58,13 @@ fun Application.module() {
         }
 
         get("/") {
+            logger.trace("Request for checking server")
+
             call.respond("Server is online")
         }
 
         post("/bot") {
+            logger.trace("Request to /bot received")
             try {
                 val inputJson = Gson().fromJson(
                     InputStreamReader(
@@ -67,6 +72,8 @@ fun Application.module() {
                         "UTF-8"
                     ), JsonObject::class.java
                 )
+
+                logger.debug("Request from vk for ${inputJson.get("type").asString} received")
 
                 val secretFromConfigForVkApi = Config().loadPath("group.secret")
 

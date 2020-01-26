@@ -24,7 +24,7 @@ fun MessagesSendQuery.keyboard(value: String): MessagesSendQuery {
  */
 data class Keyboard(val one_time: Boolean, val buttons: List<List<Button>>)
 
-private val logger = LoggerFactory.getLogger("Keyboard")
+private val logger = LoggerFactory.getLogger("bot.keyboard.Keyboard")
 
 /**
  * Buttons class for Keyboard
@@ -109,19 +109,40 @@ fun getKeyboardForCurrentPerson(
         if (user != null) {
             keyboardButtons.createLine()
             keyboardButtons.createLine()
+            //keyboardButtons.createLine()
 
             if (user.vkNotification)
-                keyboardButtons.createButton(BotCommands.UnSubscribeVk.commandText, Color.RED)
+                keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.BLUE)
             else
-                keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.GREEN)
+                keyboardButtons.createButton(BotCommands.SubscribeVk.commandText, Color.RED)
+
+            if (user.newEventNotification)
+                keyboardButtons.createButton("&#10133;", Color.BLUE)
+            else
+                keyboardButtons.createButton("&#10133;", Color.RED)
+
+            if (user.changeEventNotification)
+                keyboardButtons.createButton("&#10135;", Color.BLUE)
+            else
+                keyboardButtons.createButton("&#10135;", Color.RED)
+
+            if (user.confirmEventNotification)
+                keyboardButtons.createButton("&#10004;", Color.BLUE)
+            else
+                keyboardButtons.createButton("&#10004;", Color.RED)
 
             if (user.emailNotification)
-                keyboardButtons.createButton(BotCommands.UnSubscribeEmail.commandText, Color.RED)
+                keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.BLUE)
             else
-                keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.GREEN)
+                keyboardButtons.createButton(BotCommands.SubscribeEmail.commandText, Color.RED)
 
             keyboardButtons.addButtonToLine(0, 0)
+            keyboardButtons.addButtonToLine(0, 4)
             keyboardButtons.addButtonToLine(1, 1)
+            keyboardButtons.addButtonToLine(1, 2)
+            keyboardButtons.addButtonToLine(1, 3)
+
+
         } else {
             logger.error("Can't get user in database by id")
         }

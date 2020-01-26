@@ -29,7 +29,7 @@ class Event : Builder() {
      * 3
      */
     fun invite(title: String): Event {
-        val text = "Вы были приглашены на событие «${title}»!"
+        val text = "Вы приглашены для участия в событии «${title}»"
         return addParams("event_invite", text) as Event
     }
 
@@ -37,9 +37,59 @@ class Event : Builder() {
      * 3
      */
     fun invite(): Event {
-        val text = "Вы были приглашены на данное событие!"
+        val text = "Вы приглашены для участия в событии"
         return addParams("event_invite", text) as Event
     }
+
+    private val days = mutableMapOf(
+        "Monday" to "Понедельник",
+        "Tuesday" to "Вторник",
+        "Wednesday" to "Среда",
+        "Thursday" to "Четверг",
+        "Friday" to "Пятница",
+        "Saturday" to "Суббота",
+        "Sunday" to "Воскресенье"
+    )
+
+    private val months = mutableMapOf(
+        "January" to "Января",
+        "February" to "Февраля",
+        "March" to "Марта",
+        "April" to "Апреля",
+        "May" to "Мая",
+        "June" to "Июня",
+        "July" to "Июля",
+        "August" to "Августа",
+        "September" to "Сентября",
+        "October" to "Октября",
+        "November" to "Ноября",
+        "December" to "Декабря"
+    )
+
+    /**
+     * Translate date text to russian
+     * @param date date which we translate
+     */
+    private fun dateToRussian(date: String): String {
+        var newDate = date
+        for ((key, value) in days) {
+            val newDateCheck = newDate.replace(key, value)
+            if (newDateCheck != newDate) {
+                newDate = newDateCheck
+                break
+            }
+        }
+
+        for ((key, value) in months) {
+            val newDateCheck = newDate.replace(key, value)
+            if (newDateCheck != newDate) {
+                newDate = newDateCheck
+                break
+            }
+        }
+        return newDate
+    }
+
 
     /**
      * 4
@@ -48,9 +98,9 @@ class Event : Builder() {
         val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy, HH:mm")
         dateFormat.timeZone = TimeZone.getTimeZone("Europe/Moscow")
         val text = "Необходимое количество участников: ${eventView.targetParticipantsCount()}" +
-                "\nНачало: ${dateFormat.format(eventView.beginTime().time)} по МСК" +
-                "\nОкончание: ${dateFormat.format(eventView.endTime().time)} по МСК" +
-                "\nАдрес проведения мероприятия: ${eventView.data.address}"
+                "\nНачало: ${dateToRussian(dateFormat.format(eventView.beginTime().time))} по МСК" +
+                "\nОкончание: ${dateToRussian(dateFormat.format(eventView.endTime().time))} по МСК" +
+                "\nАдрес: ${eventView.data.address}"
 
         return addParams("event_info", text) as Event
     }
@@ -59,7 +109,7 @@ class Event : Builder() {
      * 2
      */
     fun eventNew(title: String): Event {
-        val text = "Было создано новое событие «${title}»"
+        val text = "Создано новое событие «${title}»"
         return addParams("event_new", text) as Event
     }
 
@@ -67,7 +117,7 @@ class Event : Builder() {
      * 2
      */
     fun eventChange(title: String): Event {
-        val text = "Событие «${title}» было изменено!"
+        val text = "Изменено событие «${title}»"
         return addParams("event_change", text) as Event
     }
 
@@ -75,7 +125,7 @@ class Event : Builder() {
      * 2
      */
     fun eventConfirm(title: String): Event {
-        val text = "Ваше участие в событии «${title}» подтверждено!"
+        val text = "Подтверждение вышего участия в событии «${title}»"
         return addParams("event_confirm", text) as Event
     }
 
@@ -85,7 +135,7 @@ class Event : Builder() {
     fun addUrl(eventView: EventView): Event {
         return addParams(
             "event_url",
-            "Ссылка на событие: ${Config().loadPath("apiserver.host")}/events/${eventView.data.id}"
+            "Ссылка: ${Config().loadPath("apiserver.host")}/events/${eventView.data.id}"
         ) as Event
     }
 
@@ -97,16 +147,16 @@ class Event : Builder() {
         var result = ""
 
         if (params.contains("user_name"))
-            result += params["user_name"] + "!\n"
+            result += params["user_name"] + "\n"
 
         if (params.contains("event_new"))
-            result += params["event_new"] + "\n"
+            result += "&#10133; " + params["event_new"] + "\n"
 
         if (params.contains("event_change"))
-            result += params["event_change"] + "\n"
+            result += "&#10135; " + params["event_change"] + "\n"
 
         if (params.contains("event_confirm"))
-            result += params["event_confirm"] + "\n"
+            result += "&#10004; " + params["event_confirm"] + "\n"
 
         if (params.contains("event_invite"))
             result += params["event_invite"] + "\n"

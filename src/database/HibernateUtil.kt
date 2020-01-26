@@ -6,25 +6,20 @@ import org.hibernate.SessionFactory
 import org.hibernate.boot.registry.StandardServiceRegistry
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder
 import org.hibernate.cfg.Configuration
-import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
 import utils.Config
 
 class HibernateUtil {
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private var sessionFactory: SessionFactory? = null
     private var registry: StandardServiceRegistry? = null
-
-    fun createTable() {
-
-    }
 
     /**
      * Setup session (connect) to database
      */
     fun setUpSession(): HibernateUtil {
 
-        logger.info("Connecting to postgres database")
+        logger.debug("Connecting to postgres database")
         val configuration = Configuration()
 
         configuration.addAnnotatedClass(UserSettings::class.java)
