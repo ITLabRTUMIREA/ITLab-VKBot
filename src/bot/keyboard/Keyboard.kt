@@ -122,9 +122,9 @@ fun getKeyboardForCurrentPerson(
                 keyboardButtons.createButton("&#10133;", Color.RED)
 
             if (user.changeEventNotification)
-                keyboardButtons.createButton("&#10135;", Color.BLUE)
+                keyboardButtons.createButton("&#9999;", Color.BLUE)
             else
-                keyboardButtons.createButton("&#10135;", Color.RED)
+                keyboardButtons.createButton("&#9999;", Color.RED)
 
             if (user.confirmEventNotification)
                 keyboardButtons.createButton("&#10004;", Color.BLUE)

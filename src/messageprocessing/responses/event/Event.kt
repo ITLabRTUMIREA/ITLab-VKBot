@@ -153,7 +153,7 @@ class Event : Builder() {
             result += "&#10133; " + params["event_new"] + "\n"
 
         if (params.contains("event_change"))
-            result += "&#10135; " + params["event_change"] + "\n"
+            result += "&#9999; " + params["event_change"] + "\n"
 
         if (params.contains("event_confirm"))
             result += "&#10004; " + params["event_confirm"] + "\n"
