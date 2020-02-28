@@ -7,7 +7,7 @@ enum class BotCommands(val commandText: String) {
     SubscribeVk("Vk рассылка"),
     SubscribeEmail("Email рассылка"),
     SubscribeNewEvent("Создание события или &#10133;"),
-    SubscribeChangeEvent("Изменение события или &#10135;"),
+    SubscribeChangeEvent("Изменение события или &#9999;"),
     SubscribeConfirmEvent("Подтверждение участия или &#10004;"),
     DeleteFromNotifyCenter("отвязать мой аккаунт от рассылок"),
     Help("/help");
