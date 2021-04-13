@@ -1,8 +1,10 @@
 trigger:
 - master
 - develop
+
 pool:
   vmImage: 'ubuntu-latest'
+
 name: $(BuildID)-$(Build.SourceBranchName)
 
 steps:
