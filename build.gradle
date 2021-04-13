@@ -83,3 +83,9 @@ dependencies {
     compile("redis.clients:jedis:$jedis_version")
     testCompile "io.ktor:ktor-server-tests:$ktor_version"
 }
+
+task copyLibToDeploy(type: Copy) {
+    from "build/libs"
+    include "*.jar"
+    into "deploy"
+}
