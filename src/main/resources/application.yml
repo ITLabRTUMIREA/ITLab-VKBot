@@ -1,0 +1,7 @@
+server:
+  port: ${PORT:8080}
+
+database:
+  redis:
+    password: "admin"
+    channel: "ch"
