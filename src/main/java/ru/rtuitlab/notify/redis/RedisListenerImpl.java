@@ -68,10 +68,10 @@ public class RedisListenerImpl implements RedisListener {
                     log.info("Subscribed to : " + channel);
                 }
 
-//                @Override
-//                public void onUnsubscribe(String channel, int subscribedChannels) {
-//                    log.info("Unsubscribed from : " + channel);
-//                }
+                @Override
+                public void onUnsubscribe(String channel, int subscribedChannels) {
+                    log.info("Unsubscribed from : " + channel);
+                }
             }, channel);
 
         }
