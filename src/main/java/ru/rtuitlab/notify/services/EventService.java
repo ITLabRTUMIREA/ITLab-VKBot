@@ -3,10 +3,12 @@ package ru.rtuitlab.notify.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import ru.rtuitlab.notify.models.*;
+import ru.rtuitlab.notify.models.Event;
+import ru.rtuitlab.notify.models.Invite;
+import ru.rtuitlab.notify.models.Message;
+import ru.rtuitlab.notify.models.MessageDTO;
 import ru.rtuitlab.notify.redis.RedisPublisher;
 import ru.rtuitlab.notify.repositories.InviteRepo;
 
@@ -33,17 +35,17 @@ public class EventService implements MessageHandler{
 
     @PostConstruct
     private void init() throws JsonProcessingException {
-        EventDTO eventDTO = new EventDTO();
-        eventDTO.setDate("01.05.21");
-        eventDTO.setText("hello world");
-        eventDTO.setPayment("1000");
-        eventDTO.setTitle("Delegation");
+        Event event = new Event();
+        event.setDate("01.05.21");
+        event.setText("hello world");
+        event.setPayment("1000");
+        event.setTitle("Delegation");
         List<String> list = new ArrayList<>();
         list.add("1");
         list.add("12");
         list.add("24");
-        eventDTO.setInvitedIds(list);
-        String message = om.writeValueAsString(eventDTO);
+        event.setInvitedIds(list);
+        String message = om.writeValueAsString(event);
         log.info("EventPost: " + message);
         handleMessage(message);
     }
@@ -86,9 +88,9 @@ public class EventService implements MessageHandler{
     @Override
     public void sendMessage(String message) {
         try {
-            EventDTO eventDTO = om.readValue(message, EventDTO.class);
-            saveInvites(getInvites(eventDTO));
-            MessageDTO messageDTO = makeMessage(eventDTO);
+            Event event = om.readValue(message, Event.class);
+            saveInvites(getInvites(event));
+            MessageDTO messageDTO = makeMessage(event);
             redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
         }
         catch (Exception e) {
@@ -98,56 +100,33 @@ public class EventService implements MessageHandler{
 
     /**
      * Convert recieved info about event to ready message for notify service
-     * @param eventDTO
+     * @param event
      * @return messageDTO
      */
-    public MessageDTO makeMessage(EventDTO eventDTO) {
+    public MessageDTO makeMessage(Event event) {
         Message message = new Message();
-        message.setTitle(eventDTO.getTitle());
-        message.setBody(eventDTO.getText());
-        message.setDate(eventDTO.getDate());
+        message.setTitle(event.getTitle());
+        message.setBody(event.getText());
+        message.setDate(event.getDate());
 
         MessageDTO messageDTO = new MessageDTO();
-        messageDTO.setUsers(eventDTO.getInvitedIds());
+        messageDTO.setUsers(event.getInvitedIds());
         messageDTO.setMessage(message);
         return messageDTO;
     }
 
     /**
-     * @deprecated
-     * Method to parse EventDTO and send messages about event & individual invites separately
-     * It is deprecated, use sendMessage(String message)
-     * @param message
-     */
-    public void sendEvent(String message) {
-        try {
-            EventDTO eventDTO = om.readValue(message, EventDTO.class);
-            Event event = new Event();
-            BeanUtils.copyProperties(eventDTO, event);
-
-            List<Invite> inviteList = saveInvites(getInvites(eventDTO));
-            redisPublisher.publish(channel, "event " + om.writeValueAsString(event));
-            for (Invite invite : inviteList) {
-                redisPublisher.publish(channel, "invite " + om.writeValueAsString(invite));
-            }
-        }
-        catch (Exception e) {
-            log.error(e.getMessage());
-        }
-    }
-
-    /**
      * Get the list of invites from event's server message
-     * @param eventDTO
+     * @param event
      * @return List of invite
      */
-    public List<Invite> getInvites(EventDTO eventDTO) {
+    public List<Invite> getInvites(Event event) {
         List<Invite> inviteList = new ArrayList<>();
-        eventDTO.getInvitedIds().forEach(inviteId -> {
+        event.getInvitedIds().forEach(inviteId -> {
             Invite invite = new Invite();
             invite.setInvitedId(inviteId);
-            invite.setDate(eventDTO.getDate());
-            invite.setEvent(eventDTO.getTitle());
+            invite.setDate(event.getDate());
+            invite.setEvent(event.getTitle());
             inviteList.add(invite);
         });
         return inviteList;
