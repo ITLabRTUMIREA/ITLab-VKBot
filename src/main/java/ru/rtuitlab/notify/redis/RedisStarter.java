@@ -2,10 +2,7 @@ package ru.rtuitlab.notify.redis;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import ru.rtuitlab.notify.services.CommentService;
-import ru.rtuitlab.notify.services.EventService;
-import ru.rtuitlab.notify.services.MessageHandler;
-import ru.rtuitlab.notify.services.ReportService;
+import ru.rtuitlab.notify.services.*;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
@@ -19,6 +16,7 @@ public class RedisStarter {
     private final ReportService reportService;
     private final EventService eventService;
     private final CommentService commentService;
+    private final TestService testService;
 
 //    private final ReportService reportService;
 
@@ -33,10 +31,11 @@ public class RedisStarter {
     @Value("${database.redis.timeout:30}")
     private Integer timeout;
 
-    public RedisStarter(ReportService reportService, EventService eventService, CommentService commentService) {
+    public RedisStarter(ReportService reportService, EventService eventService, CommentService commentService, TestService testService) {
         this.reportService = reportService;
         this.eventService = eventService;
         this.commentService = commentService;
+        this.testService = testService;
     }
 
 
@@ -50,6 +49,7 @@ public class RedisStarter {
         executorService.execute(new Listener(reportService, channels.get(0)));
         executorService.execute(new Listener(eventService, channels.get(1)));
         executorService.execute(new Listener(commentService, channels.get(2)));
+        executorService.execute(new Listener(testService, channels.get(3)));
     }
 
 
