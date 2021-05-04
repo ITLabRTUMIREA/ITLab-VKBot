@@ -8,5 +8,5 @@ import java.util.List;
 public class MessageDTO {
 
     private Message message;
-    private List<Long> users;
+    private List<String> users;
 }

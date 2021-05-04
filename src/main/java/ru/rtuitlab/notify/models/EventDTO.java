@@ -17,5 +17,5 @@ public class EventDTO extends Event{
 //    private String title;
 //    private String text;
 //    private String date;
-    private List<Long> invitedIds;
+    private List<String> invitedIds;
 }

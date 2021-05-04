@@ -14,7 +14,7 @@ public class Invite {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long invitedId;
+    private String invitedId;
 //    @ManyToOne
     private String event;
     private String date;

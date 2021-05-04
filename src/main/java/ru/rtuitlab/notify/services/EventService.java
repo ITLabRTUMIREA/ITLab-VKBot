@@ -38,10 +38,10 @@ public class EventService implements MessageHandler{
         eventDTO.setText("hello world");
         eventDTO.setPayment("1000");
         eventDTO.setTitle("Delegation");
-        List<Long> list = new ArrayList<>();
-        list.add(1L);
-        list.add(12L);
-        list.add(24L);
+        List<String> list = new ArrayList<>();
+        list.add("1");
+        list.add("12");
+        list.add("24");
         eventDTO.setInvitedIds(list);
         String message = om.writeValueAsString(eventDTO);
         log.info("EventPost: " + message);
@@ -55,7 +55,7 @@ public class EventService implements MessageHandler{
             receiveAccept(message);
         }
         else {
-            sendEvent(message);
+            sendMessage(message);
         }
     }
 
@@ -83,7 +83,8 @@ public class EventService implements MessageHandler{
      * send event info to notify-service
      * @param message
      */
-    public void sendEvent(String message) {
+    @Override
+    public void sendMessage(String message) {
         try {
             EventDTO eventDTO = om.readValue(message, EventDTO.class);
             saveInvites(getInvites(eventDTO));
@@ -115,10 +116,10 @@ public class EventService implements MessageHandler{
     /**
      * @deprecated
      * Method to parse EventDTO and send messages about event & individual invites separately
-     * It is deprecated, use sendEvent(String message)
+     * It is deprecated, use sendMessage(String message)
      * @param message
      */
-    public void sendEventT(String message) {
+    public void sendEvent(String message) {
         try {
             EventDTO eventDTO = om.readValue(message, EventDTO.class);
             Event event = new Event();

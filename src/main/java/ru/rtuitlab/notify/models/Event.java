@@ -4,8 +4,9 @@ import lombok.Data;
 
 @Data
 public class Event {
-    protected String payment;
-    protected String title;
-    protected String text;
-    protected String date;
+    private String payment;
+    private String title;
+    private String text;
+    private String date;
+    private Long size;
 }
