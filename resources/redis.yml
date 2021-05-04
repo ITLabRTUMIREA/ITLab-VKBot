@@ -1,0 +1,5 @@
+database:
+  redis:
+    password: ${REDIS_PASSWORD:admin}
+    channels: reports,events,comments,test
+    sendChannel: test

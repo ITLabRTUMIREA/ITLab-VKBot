@@ -1,0 +1,11 @@
+spring:
+  jpa:
+    hibernate:
+      dialect: org.hibernate.dialect.PostgreSQL95Dialect
+      jdbc:
+        time_zone: ${TZ:Europe/Moscow}
+      ddl-auto: ${SCHEME_POLICY:update}
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DB:notify}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:0000}
