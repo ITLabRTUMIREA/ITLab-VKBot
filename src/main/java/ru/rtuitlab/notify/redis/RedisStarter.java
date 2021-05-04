@@ -2,13 +2,13 @@ package ru.rtuitlab.notify.redis;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import ru.rtuitlab.notify.services.CommentService;
 import ru.rtuitlab.notify.services.EventService;
 import ru.rtuitlab.notify.services.MessageHandler;
 import ru.rtuitlab.notify.services.ReportService;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -18,6 +18,7 @@ public class RedisStarter {
 //    private final RedisListener redisListener;
     private final ReportService reportService;
     private final EventService eventService;
+    private final CommentService commentService;
 
 //    private final ReportService reportService;
 
@@ -32,9 +33,10 @@ public class RedisStarter {
     @Value("${database.redis.timeout:30}")
     private Integer timeout;
 
-    public RedisStarter(ReportService reportService, EventService eventService) {
+    public RedisStarter(ReportService reportService, EventService eventService, CommentService commentService) {
         this.reportService = reportService;
         this.eventService = eventService;
+        this.commentService = commentService;
     }
 
 
@@ -47,6 +49,7 @@ public class RedisStarter {
         ExecutorService executorService = Executors.newFixedThreadPool(channels.size());
         executorService.execute(new Listener(reportService, channels.get(0)));
         executorService.execute(new Listener(eventService, channels.get(1)));
+        executorService.execute(new Listener(commentService, channels.get(2)));
     }
 
 

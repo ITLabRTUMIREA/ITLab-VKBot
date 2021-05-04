@@ -4,7 +4,7 @@ server:
 database:
   redis:
     password: ${REDIS_PASSWORD:admin}
-    channels: reports,events,salary
+    channels: reports,events,comments
     sendChannel: reports
 
 spring:

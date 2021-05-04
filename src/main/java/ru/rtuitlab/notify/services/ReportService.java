@@ -13,4 +13,9 @@ public class ReportService implements MessageHandler{
     public void handleMessage(String message) {
         System.out.println("ReportService here! + " + message);
     }
+
+    @Override
+    public void sendMessage(String message) {
+
+    }
 }

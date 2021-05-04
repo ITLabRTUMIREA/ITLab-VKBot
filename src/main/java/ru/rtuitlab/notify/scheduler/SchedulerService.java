@@ -71,7 +71,7 @@ public class SchedulerService {
         message.setTitle(inviteTmp.getEvent());
         message.setBody(remindMessage);
 
-        List<Long> users = new ArrayList<>();
+        List<String> users = new ArrayList<>();
         invites.forEach(invite -> {
             users.add(invite.getInvitedId());
         });
