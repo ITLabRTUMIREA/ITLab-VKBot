@@ -4,17 +4,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import ru.rtuitlab.notify.models.Event;
-import ru.rtuitlab.notify.models.Invite;
-import ru.rtuitlab.notify.models.Message;
-import ru.rtuitlab.notify.models.MessageDTO;
+import org.springframework.web.client.RestTemplate;
+import ru.rtuitlab.notify.models.*;
 import ru.rtuitlab.notify.redis.RedisPublisher;
 import ru.rtuitlab.notify.repositories.InviteRepo;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -22,33 +25,22 @@ public class EventService implements MessageHandler{
 
     private final RedisPublisher redisPublisher;
     private final InviteRepo inviteRepo;
+    private final RestTemplate restTemplate;
     private final ObjectMapper om;
 
-    public EventService(RedisPublisher redisPublisher, InviteRepo inviteRepo, ObjectMapper om) {
+    public EventService(RedisPublisher redisPublisher, InviteRepo inviteRepo, RestTemplate restTemplate, ObjectMapper om) {
         this.redisPublisher = redisPublisher;
         this.inviteRepo = inviteRepo;
+        this.restTemplate = restTemplate;
         this.om = om;
     }
 
     @Value("${database.redis.sendChannel}")
     private String channel;
-
-    @PostConstruct
-    private void init() throws JsonProcessingException {
-        Event event = new Event();
-        event.setDate("01.05.21");
-        event.setText("hello world");
-        event.setPayment("1000");
-        event.setTitle("Delegation");
-        List<String> list = new ArrayList<>();
-        list.add("1");
-        list.add("12");
-        list.add("24");
-        event.setInvitedIds(list);
-        String message = om.writeValueAsString(event);
-        log.info("EventPost: " + message);
-        handleMessage(message);
-    }
+    @Value("${secrets.token}")
+    private String token;
+    @Value("${secrets.url}")
+    private String url;
 
     @Override
     public void handleMessage(String message) {
@@ -69,7 +61,8 @@ public class EventService implements MessageHandler{
         try {
             String obj = message.substring(6, message.length());
             Invite invite = om.readValue(obj, Invite.class);
-            List<Invite> invites = inviteRepo.findAllByInvitedIdAndEvent(invite.getInvitedId(), invite.getEvent());
+            List<Invite> invites = inviteRepo.findAllByInvitedIdAndEvent(
+                    invite.getInvitedId(), invite.getEvent());
             if (invites != null) {
                 inviteRepo.deleteAll(invites);
             } else {
@@ -89,13 +82,53 @@ public class EventService implements MessageHandler{
     public void sendMessage(String message) {
         try {
             Event event = om.readValue(message, Event.class);
-            saveInvites(getInvites(event));
-            MessageDTO messageDTO = makeMessage(event);
-            redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
+
+            sendPersonalInvites(event);
+
+            if (event.getInvitedIds().size() < event.getSize()) {
+                sendPublicInvites(event);
+            }
+
         }
         catch (Exception e) {
             log.error(e.getMessage());
         }
+    }
+
+    private void sendPublicInvites(Event event) throws JsonProcessingException {
+        List<String> usersIds = getUsers()
+                .stream()
+                .map(User::getId)
+                .filter(id -> !event.getInvitedIds().contains(id))
+                .collect(Collectors.toList());
+        event.setInvitedIds(usersIds);
+        MessageDTO messageDTO = makeMessage(
+                event, "Появилось новое свободное событие '" + event.getTitle() + "'");
+        redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
+        log.info("send public invites about " + messageDTO.getMessage().getTitle() + " event");
+    }
+
+    private void sendPersonalInvites(Event event) throws JsonProcessingException {
+        saveInvites(getInvites(event));
+        MessageDTO messageDTO = makeMessage(
+                event, "Вас пригласили на мероприятие '" + event.getTitle() + "'");
+        redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
+        log.info("send personal invites about " + messageDTO.getMessage().getTitle() + " event");
+    }
+
+    public List<User> getUsers() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+        HttpEntity<String> request = new HttpEntity<>(headers);
+        ResponseEntity<User[]> response = restTemplate.exchange(url, HttpMethod.GET, request, User[].class);
+        if (response.getBody() == null) {
+            log.error("Can't update users info");
+            return null;
+        }
+        List<User> users = Arrays.asList(response.getBody());
+//        usersRepo.saveAll(users);
+        log.info("Users information has been updated");
+        return users;
     }
 
     /**
@@ -103,10 +136,10 @@ public class EventService implements MessageHandler{
      * @param event
      * @return messageDTO
      */
-    public MessageDTO makeMessage(Event event) {
+    public MessageDTO makeMessage(Event event, String text) {
         Message message = new Message();
         message.setTitle(event.getTitle());
-        message.setBody(event.getText());
+        message.setBody(text);
         message.setDate(event.getDate());
 
         MessageDTO messageDTO = new MessageDTO();

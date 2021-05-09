@@ -6,9 +6,9 @@ import java.util.List;
 
 @Data
 public class Event {
-    private String payment;
+//    private String payment; ???
     private String title;
-    private String text;
     private String date;
+    private Integer size;
     private List<String> invitedIds;
 }

@@ -1,6 +1,5 @@
 package ru.rtuitlab.notify.redis;
 
-import org.springframework.scheduling.annotation.Async;
 import ru.rtuitlab.notify.services.MessageHandler;
 
 public interface RedisListener {

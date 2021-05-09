@@ -15,3 +15,7 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DB:notify}
     username: ${DB_USER:postgres}
     password: ${DB_PASS:0000}
+
+secrets:
+  url: https://manage.rtuitlab.dev/api/User?count=-1&offset=0
+  token: ${token}
