@@ -7,5 +7,4 @@ public class Report {
     private String sender;
     private String receiverId;
     private String date;
-//    private String text;
 }

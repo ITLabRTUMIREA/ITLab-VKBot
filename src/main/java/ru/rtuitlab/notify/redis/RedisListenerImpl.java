@@ -1,38 +1,16 @@
 package ru.rtuitlab.notify.redis;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 import ru.rtuitlab.notify.services.MessageHandler;
-
-import javax.annotation.PostConstruct;
 
 @Slf4j
 @Service
 public class RedisListenerImpl implements RedisListener {
 
     private Jedis jedis;
-
-//    @Value("${database.redis.host:localhost}")
-//    private String host;
-//    @Value("${database.redis.port:6379}")
-//    private Integer port;
-//    @Value("${database.redis.password:}")
-//    private String password;
-//    @Value("${database.redis.channel:}")
-//    private String channel;
-//    @Value("${database.redis.timeout:30}")
-//    private Integer timeout;
-
-//    @PostConstruct
-//    public void start(){
-//        listenEvents();
-//    }
 
     @Override
     public void unsubscribe() {
@@ -58,12 +36,6 @@ public class RedisListenerImpl implements RedisListener {
                 public void onMessage(String channel, String message) {
                     log.debug("Channel $channel has sent a message: $message");
                     if (!message.isEmpty()) {
-//                        String res = new GsonBuilder()
-//                                .setPrettyPrinting()
-//                                .setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-//                                .create()
-//                                .fromJson(message, String.class);
-//                        System.out.println("!!!!! " + res);
                         messageHandler.handleMessage(message);
                     }
                 }
