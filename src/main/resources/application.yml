@@ -20,9 +20,10 @@ database:
     host: ${ITLAB_NOTIFY_REDIS_HOST:localhost}
     port: ${ITLAB_NOTIFY_REDIS_PORT:6379}
     password: ${ITLAB_NOTIFY_REDIS_PASSWORD:admin}
-    channels: reports,events,comments
-    sendChannel: pushInfo
+    channels: reports,events,comments #,test
+    sendChannel: ${ITLAB_NOTIFY_PUSH_CHANNEL:pushInfo}
 
 secrets:
-  url: ${ITLAB_NOTIFY_AUTH_URL:https://manage.rtuitlab.dev/api/User}
+  url: ${ITLAB_NOTIFY_AUTH_URL:https://dev.manage.rtuitlab.dev/api/user/all}
   token: ${ITLAB_NOTIFY_AUTH_TOKEN}
+  query: ${ITLAB_NOTIFY_AUTH_GET_QUERY:?count=-1&offset=0}

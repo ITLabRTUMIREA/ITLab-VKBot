@@ -12,13 +12,10 @@ import java.util.concurrent.Executors;
 @Service
 public class RedisStarter {
 
-//    private final RedisListener redisListener;
     private final ReportService reportService;
     private final EventService eventService;
     private final CommentService commentService;
 //    private final TestService testService;
-
-//    private final ReportService reportService;
 
     @Value("${database.redis.host:localhost}")
     private String host;

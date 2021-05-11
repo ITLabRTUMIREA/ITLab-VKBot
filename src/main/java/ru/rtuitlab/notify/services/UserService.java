@@ -23,6 +23,8 @@ public class UserService {
     private String token;
     @Value("${secrets.url}")
     private String url;
+    @Value("${secrets.query}")
+    private String query;
 
     public UserService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -30,7 +32,7 @@ public class UserService {
 
     public List<User> getUsers() {
         HttpEntity<String> request = getHeaders();
-        ResponseEntity<User[]> response = restTemplate.exchange(url + "?count=-1&offset=0", HttpMethod.GET, request, User[].class);
+        ResponseEntity<User[]> response = restTemplate.exchange(url + query, HttpMethod.GET, request, User[].class);
         if (response.getBody() == null) {
             log.error("Can't update users info");
             return null;
@@ -41,20 +43,28 @@ public class UserService {
     }
 
     public User getUser(String userId) {
-        HttpEntity<String> request = getHeaders();
-        ResponseEntity<User> response = restTemplate.exchange(
-                url + '/' + userId,
-                HttpMethod.GET,
-                request,
-                User.class
-        );
-        if (response.getBody() == null) {
-            log.error("Can't get user " + userId + " info");
-            return null;
+        User res = null;
+        for (User user : getUsers()) {
+            if (user.getId().equals(userId)) {
+                res = user;
+                break;
+            }
         }
-        User user = response.getBody();
-        log.info("User information has been updated");
-        return user;
+        return res;
+//        HttpEntity<String> request = getHeaders();
+//        ResponseEntity<User> response = restTemplate.exchange(
+//                url + '/' + userId,
+//                HttpMethod.GET,
+//                request,
+//                User.class
+//        );
+//        if (response.getBody() == null) {
+//            log.error("Can't get user " + userId + " info");
+//            return null;
+//        }
+//        User user = response.getBody();
+//        log.info("User information has been updated");
+//        return user;
     }
 
     private HttpEntity<String> getHeaders() {

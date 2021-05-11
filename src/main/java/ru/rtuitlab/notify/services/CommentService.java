@@ -38,6 +38,7 @@ public class CommentService implements MessageHandler {
             Comment comment = om.readValue(message, Comment.class);
             MessageDTO messageDTO = makeMessage(comment);
             redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
+            log.info("comment publish: " + messageDTO);
         }
         catch (Exception e) {
             log.error(e.getMessage());

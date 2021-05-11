@@ -56,8 +56,8 @@ public class EventService implements MessageHandler{
                     invite.getInvitedId(), invite.getEvent());
             if (invites != null) {
                 inviteRepo.deleteAll(invites);
-                log.info("Пользователь " + invite.getInvitedId()
-                        + " подтвердил участие на мероприятии '" + invite.getEvent() + "'");
+                log.info("user " + invite.getInvitedId()
+                        + " accepted invite for '" + invite.getEvent() + "' event");
             } else {
                 log.error("Can't delete " + message);
             }

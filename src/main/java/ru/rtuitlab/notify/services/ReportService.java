@@ -40,13 +40,18 @@ public class ReportService implements MessageHandler{
         try {
             Report report = om.readValue(message, Report.class);
             if (report.getSenderId().equals(report.getReceiverId())) {
-                log.info("Пользователь " + report.getSenderId() + " написал отчет о себе");
+                log.info("User " + report.getSenderId() + " wrote report about him/herself");
                 return;
             }
             User user = userService.getUser(report.getSenderId());
+            if (user == null) {
+                log.info("user " + report.getSenderId() + " not found");
+                return;
+            }
             String sender = user.getLastName() + ' ' + user.getFirstName();
             MessageDTO messageDTO = makeMessage(report, sender);
             redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
+            log.info("report publish: " + messageDTO);
         }
         catch (Exception e) {
             log.error(e.getMessage());
@@ -55,7 +60,7 @@ public class ReportService implements MessageHandler{
 
     public MessageDTO makeMessage(Report report, String user) {
         Message message = new Message();
-        message.setTitle("На вас написали отчет");
+        message.setTitle("О вас написали отчет");
         message.setDate(report.getDate());
         message.setBody(
                 String.format("Пользователь %s написал о вас отчет",
