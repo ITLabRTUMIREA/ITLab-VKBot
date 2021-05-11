@@ -4,3 +4,25 @@ server:
 spring:
   application:
     name: Notify-service
+  jpa:
+    hibernate:
+      dialect: org.hibernate.dialect.PostgreSQL95Dialect
+      jdbc:
+        time_zone: ${ITLAB_NOTIFY_TZ:Europe/Moscow}
+      ddl-auto: ${ITLAB_NOTIFY_SCHEME_POLICY:update}
+  datasource:
+    url: jdbc:postgresql://${ITLAB_NOTIFY_DB_HOST:localhost}:${ITLAB_NOTIFY_DB_PORT:5432}/${ITLAB_NOTIFY_DB_NAME:notify}
+    username: ${ITLAB_NOTIFY_DB_USER:postgres}
+    password: ${ITLAB_NOTIFY_DB_PASS:0000}
+
+database:
+  redis:
+    host: ${ITLAB_NOTIFY_REDIS_HOST:localhost}
+    port: ${ITLAB_NOTIFY_REDIS_PORT:6379}
+    password: ${ITLAB_NOTIFY_REDIS_PASSWORD:admin}
+    channels: reports,events,comments
+    sendChannel: pushInfo
+
+secrets:
+  url: ${ITLAB_NOTIFY_AUTH_URL:https://manage.rtuitlab.dev/api/User}
+  token: ${ITLAB_NOTIFY_AUTH_TOKEN}
