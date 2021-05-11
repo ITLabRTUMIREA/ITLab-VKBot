@@ -13,7 +13,7 @@ group 'ru.rtuitlab'
 version '0.0.1'
 
 sourceCompatibility = 1.8
-mainClassName = "Notify.java"
+mainClassName = "ru.rtuitlab.notify.Notify"
 
 jar {
     manifest {
