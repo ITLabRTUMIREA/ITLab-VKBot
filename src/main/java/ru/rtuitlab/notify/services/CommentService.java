@@ -1,7 +1,6 @@
 package ru.rtuitlab.notify.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.tools.javac.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -9,6 +8,8 @@ import ru.rtuitlab.notify.models.Comment;
 import ru.rtuitlab.notify.models.Message;
 import ru.rtuitlab.notify.models.MessageDTO;
 import ru.rtuitlab.notify.redis.RedisPublisher;
+
+import java.util.Collections;
 
 @Slf4j
 @Service
@@ -52,7 +53,7 @@ public class CommentService implements MessageHandler {
         message.setDate(comment.getDate());
 
         MessageDTO messageDTO = new MessageDTO();
-        messageDTO.setUsers(List.of(comment.getUser()));
+        messageDTO.setUsers(Collections.singletonList(comment.getUser()));
         messageDTO.setMessage(message);
         return messageDTO;
     }
