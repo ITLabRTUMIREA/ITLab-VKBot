@@ -55,8 +55,7 @@ public class ReportService implements MessageHandler{
 
     public MessageDTO makeMessage(Report report, String user) {
         Message message = new Message();
-        // FIXME Change title
-        message.setTitle("На вас написан донос");
+        message.setTitle("На вас написали отчет");
         message.setDate(report.getDate());
         message.setBody(
                 String.format("Пользователь %s написал о вас отчет",

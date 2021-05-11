@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.rtuitlab.notify.models.Invite;
 import ru.rtuitlab.notify.models.Message;
@@ -12,7 +13,6 @@ import ru.rtuitlab.notify.models.MessageDTO;
 import ru.rtuitlab.notify.redis.RedisPublisher;
 import ru.rtuitlab.notify.repositories.InviteRepo;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,8 +43,8 @@ public class SchedulerService {
     private String url;
 
 //    @Scheduled(cron = "*/15 * * * * *") // test case
-//    @Scheduled(cron = "0 0 14 * * *")
-    @PostConstruct //test case
+//    @PostConstruct //test case
+    @Scheduled(cron = "0 0 14 * * *")
     public void sendReminders() {
         try {
             List<Invite> invites = getInvites();

@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:8080}
+  port: ${ITLAB_NOTIFY_PORT:8080}
 
 spring:
   application:
