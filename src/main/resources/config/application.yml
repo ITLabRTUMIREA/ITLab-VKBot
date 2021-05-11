@@ -1,5 +1,7 @@
 database:
   redis:
+#    host: 6.tcp.ngrok.io
+#    port: 16588
     password: ${REDIS_PASSWORD:admin}
     channels: reports,events,comments,test
     sendChannel: test
@@ -17,5 +19,5 @@ spring:
     password: ${DB_PASS:0000}
 
 secrets:
-  url: https://manage.rtuitlab.dev/api/User?count=-1&offset=0
+  url: https://manage.rtuitlab.dev/api/User
   token: ${token}

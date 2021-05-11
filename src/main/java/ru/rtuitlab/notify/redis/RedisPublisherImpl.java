@@ -2,6 +2,7 @@ package ru.rtuitlab.notify.redis;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 
@@ -31,7 +32,14 @@ public class RedisPublisherImpl implements RedisPublisher{
     @PostConstruct
     private void init() {
         connect(host, port, password);
+//        connect("6.tcp.ngrok.io", 16588, "admin");
     }
+
+//    @Scheduled(cron = "*/10 * * * * *")
+//    private void pub() {
+//        publish("test", "asdasda");
+//        log.info("message send");
+//    }
 
     @Override
     public void connect(String host, Integer port,

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.rtuitlab.notify.models.Message;
 import ru.rtuitlab.notify.models.MessageDTO;
 import ru.rtuitlab.notify.models.Report;
+import ru.rtuitlab.notify.models.User;
 import ru.rtuitlab.notify.redis.RedisPublisher;
 
 import java.util.Collections;
@@ -16,10 +17,12 @@ import java.util.Collections;
 public class ReportService implements MessageHandler{
 
     private final RedisPublisher redisPublisher;
+    private final UserService userService;
     private final ObjectMapper om;
 
-    public ReportService(RedisPublisher redisPublisher, ObjectMapper om) {
+    public ReportService(RedisPublisher redisPublisher, UserService userService, ObjectMapper om) {
         this.redisPublisher = redisPublisher;
+        this.userService = userService;
         this.om = om;
     }
 
@@ -36,7 +39,13 @@ public class ReportService implements MessageHandler{
     public void sendMessage(String message) {
         try {
             Report report = om.readValue(message, Report.class);
-            MessageDTO messageDTO = makeMessage(report);
+            if (report.getSenderId().equals(report.getReceiverId())) {
+                log.info("Пользователь " + report.getSenderId() + " написал отчет о себе");
+                return;
+            }
+            User user = userService.getUser(report.getSenderId());
+            String sender = user.getLastName() + ' ' + user.getFirstName();
+            MessageDTO messageDTO = makeMessage(report, sender);
             redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
         }
         catch (Exception e) {
@@ -44,14 +53,14 @@ public class ReportService implements MessageHandler{
         }
     }
 
-    public MessageDTO makeMessage(Report report) {
+    public MessageDTO makeMessage(Report report, String user) {
         Message message = new Message();
         // FIXME Change title
         message.setTitle("На вас написан донос");
         message.setDate(report.getDate());
         message.setBody(
                 String.format("Пользователь %s написал о вас отчет",
-                        report.getSender()));
+                        user));
 
         MessageDTO messageDTO = new MessageDTO();
         messageDTO.setUsers(Collections.singletonList(report.getReceiverId()));

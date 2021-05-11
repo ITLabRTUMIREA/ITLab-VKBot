@@ -4,18 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import ru.rtuitlab.notify.models.*;
 import ru.rtuitlab.notify.redis.RedisPublisher;
 import ru.rtuitlab.notify.repositories.InviteRepo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,22 +19,19 @@ public class EventService implements MessageHandler{
 
     private final RedisPublisher redisPublisher;
     private final InviteRepo inviteRepo;
-    private final RestTemplate restTemplate;
+    private final UserService userService;
     private final ObjectMapper om;
 
-    public EventService(RedisPublisher redisPublisher, InviteRepo inviteRepo, RestTemplate restTemplate, ObjectMapper om) {
+    public EventService(RedisPublisher redisPublisher, InviteRepo inviteRepo, UserService userService, ObjectMapper om) {
         this.redisPublisher = redisPublisher;
         this.inviteRepo = inviteRepo;
-        this.restTemplate = restTemplate;
+        this.userService = userService;
         this.om = om;
     }
 
     @Value("${database.redis.sendChannel}")
     private String channel;
-    @Value("${secrets.token}")
-    private String token;
-    @Value("${secrets.url}")
-    private String url;
+
 
     @Override
     public void handleMessage(String message) {
@@ -65,6 +56,8 @@ public class EventService implements MessageHandler{
                     invite.getInvitedId(), invite.getEvent());
             if (invites != null) {
                 inviteRepo.deleteAll(invites);
+                log.info("Пользователь " + invite.getInvitedId()
+                        + " подтвердил участие на мероприятии '" + invite.getEvent() + "'");
             } else {
                 log.error("Can't delete " + message);
             }
@@ -96,7 +89,7 @@ public class EventService implements MessageHandler{
     }
 
     private void sendPublicInvites(Event event) throws JsonProcessingException {
-        List<String> usersIds = getUsers()
+        List<String> usersIds = userService.getUsers()
                 .stream()
                 .map(User::getId)
                 .filter(id -> !event.getInvitedIds().contains(id))
@@ -116,20 +109,7 @@ public class EventService implements MessageHandler{
         log.info("send personal invites about " + messageDTO.getMessage().getTitle() + " event");
     }
 
-    public List<User> getUsers() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + token);
-        HttpEntity<String> request = new HttpEntity<>(headers);
-        ResponseEntity<User[]> response = restTemplate.exchange(url, HttpMethod.GET, request, User[].class);
-        if (response.getBody() == null) {
-            log.error("Can't update users info");
-            return null;
-        }
-        List<User> users = Arrays.asList(response.getBody());
-//        usersRepo.saveAll(users);
-        log.info("Users information has been updated");
-        return users;
-    }
+
 
     /**
      * Convert recieved info about event to ready message for notify service

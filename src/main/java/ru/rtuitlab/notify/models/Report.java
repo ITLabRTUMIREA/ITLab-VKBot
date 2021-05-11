@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class Report {
-    private String sender;
+    private String senderId;
     private String receiverId;
     private String date;
 }
