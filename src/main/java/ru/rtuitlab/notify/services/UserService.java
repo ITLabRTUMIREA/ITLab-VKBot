@@ -29,9 +29,7 @@ public class UserService {
     }
 
     public List<User> getUsers() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + token);
-        HttpEntity<String> request = new HttpEntity<>(headers);
+        HttpEntity<String> request = getHeaders();
         ResponseEntity<User[]> response = restTemplate.exchange(url + "?count=-1&offset=0", HttpMethod.GET, request, User[].class);
         if (response.getBody() == null) {
             log.error("Can't update users info");
@@ -43,9 +41,7 @@ public class UserService {
     }
 
     public User getUser(String userId) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + token);
-        HttpEntity<String> request = new HttpEntity<>(headers);
+        HttpEntity<String> request = getHeaders();
         ResponseEntity<User> response = restTemplate.exchange(
                 url + '/' + userId,
                 HttpMethod.GET,
@@ -59,5 +55,11 @@ public class UserService {
         User user = response.getBody();
         log.info("User information has been updated");
         return user;
+    }
+
+    private HttpEntity<String> getHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Key", token);
+        return new HttpEntity<>(headers);
     }
 }
