@@ -2,14 +2,12 @@ package ru.rtuitlab.notify.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.rtuitlab.notify.models.User;
 
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.List;
 
@@ -30,9 +28,17 @@ public class UserService {
         this.restTemplate = restTemplate;
     }
 
+    @PostConstruct
+    private void init() {
+        log.info(token);
+        log.info(url);
+        log.info(query);
+    }
+
     public List<User> getUsers() {
         HttpEntity<String> request = getHeaders();
         ResponseEntity<User[]> response = restTemplate.exchange(url + query, HttpMethod.GET, request, User[].class);
+        log.info("Exchange complete");
         if (response.getBody() == null) {
             log.error("Can't update users info");
             return null;
@@ -69,6 +75,7 @@ public class UserService {
 
     private HttpEntity<String> getHeaders() {
         HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
         headers.add("Key", token);
         return new HttpEntity<>(headers);
     }
