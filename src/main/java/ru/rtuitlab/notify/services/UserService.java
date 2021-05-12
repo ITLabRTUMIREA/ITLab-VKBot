@@ -9,6 +9,7 @@ import ru.rtuitlab.notify.models.User;
 
 import javax.annotation.PostConstruct;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -37,6 +38,7 @@ public class UserService {
 
     public List<User> getUsers() {
         HttpEntity<String> request = getHeaders();
+        log.info("Send exchange request");
         ResponseEntity<User[]> response = restTemplate.exchange(url + query, HttpMethod.GET, request, User[].class);
         log.info("Exchange complete");
         if (response.getBody() == null) {
@@ -76,7 +78,8 @@ public class UserService {
     private HttpEntity<String> getHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         headers.add("Key", token);
-        return new HttpEntity<>(headers);
+        return new HttpEntity<>("body", headers);
     }
 }
