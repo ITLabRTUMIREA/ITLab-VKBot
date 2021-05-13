@@ -42,6 +42,9 @@ public class SchedulerService {
     @Value("${secrets.url}")
     private String url;
 
+    /**
+     * Send reminds of unaccepted invites every day at 14:00
+     */
 //    @Scheduled(cron = "*/15 * * * * *") // test case
 //    @PostConstruct //test case
     @Scheduled(cron = "0 0 14 * * *")

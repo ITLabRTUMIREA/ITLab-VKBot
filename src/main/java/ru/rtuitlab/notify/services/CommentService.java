@@ -28,10 +28,14 @@ public class CommentService implements MessageHandler {
 
     @Override
     public void handleMessage(String message) {
-        System.out.println("CommentService here! + " + message);
+        log.info("Comment service handle message: " + message);
         sendMessage(message);
     }
 
+    /**
+     * Method which send notification about comment
+     * @param message - json object of Comment entity
+     */
     @Override
     public void sendMessage(String message) {
         try {
@@ -51,7 +55,6 @@ public class CommentService implements MessageHandler {
         message.setBody(
                 String.format("Пользователь %s оставил комменатрий на ваш отчет '%s'",
                 comment.getSender(), comment.getReport()));
-        message.setDate(comment.getDate());
 
         MessageDTO messageDTO = new MessageDTO();
         messageDTO.setUsers(Collections.singletonList(comment.getUser()));

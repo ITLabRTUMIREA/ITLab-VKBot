@@ -11,6 +11,7 @@ import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -29,55 +30,63 @@ public class UserService {
         this.restTemplate = restTemplate;
     }
 
-    @PostConstruct
-    private void init() {
-        log.info(token);
-        log.info(url);
-        log.info(query);
-    }
-
-    public List<User> getUsers() {
+    /**
+     * Send get request for users info
+     * @return List of users
+     */
+    public Optional<List<User>> getUsers() {
         HttpEntity<String> request = getHeaders();
-        log.info("Send exchange request");
-        ResponseEntity<User[]> response = restTemplate.exchange(url + query, HttpMethod.GET, request, User[].class);
-        log.info("Exchange complete");
-        if (response.getBody() == null) {
-            log.error("Can't update users info");
-            return null;
+        try {
+            log.info("Send get request for users: " + url + query);
+            ResponseEntity<User[]> response = restTemplate.exchange(url + query, HttpMethod.GET, request, User[].class);
+            log.info("Users have been received");
+            if (response.getBody() == null) {
+                log.error("Response body is null / Can't get users info from response");
+                return Optional.empty();
+            }
+            List<User> users = Arrays.asList(response.getBody());
+            log.info("Users information has been accepted. Success");
+            return Optional.of(users);
         }
-        List<User> users = Arrays.asList(response.getBody());
-        log.info("Users information has been updated");
-        return users;
+        catch (Exception e) {
+            log.error("Get request failed: " + url + query);
+        }
+        return Optional.empty();
     }
 
-    public User getUser(String userId) {
+    /**
+     * Find user by his id in the general list of users received by method getUsers()
+     * @param userId - UUID of user (String)
+     * @return User entity if success or <b><u>null pointer</u></b> if user not found
+     */
+    public Optional<User> getUser(String userId) {
+        Optional<List<User>> users = getUsers();
+        if (!users.isPresent()) {
+            log.error("user list from getUsers() is empty");
+            return Optional.empty();
+        }
+        log.info("Find user '" + userId + "' in the general list of users");
         User res = null;
-        for (User user : getUsers()) {
+        for (User user : users.get()) {
             if (user.getId().equals(userId)) {
                 res = user;
                 break;
             }
         }
-        return res;
-//        HttpEntity<String> request = getHeaders();
-//        ResponseEntity<User> response = restTemplate.exchange(
-//                url + '/' + userId,
-//                HttpMethod.GET,
-//                request,
-//                User.class
-//        );
-//        if (response.getBody() == null) {
-//            log.error("Can't get user " + userId + " info");
-//            return null;
-//        }
-//        User user = response.getBody();
-//        log.info("User information has been updated");
-//        return user;
+        if (res == null) {
+            log.error("Can't find user '" + userId + "' in the general list of users");
+            return Optional.empty();
+        }
+        log.info("User '" + userId + "' has been found");
+        return Optional.of(res);
     }
 
+    /**
+     * Method to get authorization and accept headers for users request
+     * @return headers
+     */
     private HttpEntity<String> getHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         headers.add("Key", token);
         return new HttpEntity<>("body", headers);

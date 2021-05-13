@@ -31,14 +31,8 @@ public class RedisPublisherImpl implements RedisPublisher{
     @PostConstruct
     private void init() {
         connect(host, port, password);
-//        connect("6.tcp.ngrok.io", 16588, "admin");
     }
 
-//    @Scheduled(cron = "*/10 * * * * *")
-//    private void pub() {
-//        publish("test", "asdasda");
-//        log.info("message send");
-//    }
 
     @Override
     public void connect(String host, Integer port,

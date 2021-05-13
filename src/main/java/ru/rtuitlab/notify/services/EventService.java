@@ -11,6 +11,7 @@ import ru.rtuitlab.notify.repositories.InviteRepo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,10 +33,15 @@ public class EventService implements MessageHandler{
     @Value("${database.redis.sendChannel}")
     private String channel;
 
-
+    /**
+     * Handle messages in events channel in redis
+     * If has "accept" keyword, then send message to receiveAccept()
+     * Else send message to sendMessage()
+     * @param message - ("accept" keyword + json object of Invite entity) / json object of Event entity
+     */
     @Override
     public void handleMessage(String message) {
-        System.out.println("EventService here! + " + message);
+        log.info("Event service handle message: " + message);
         if (message.substring(0, 6).equals("accept")) {
             receiveAccept(message);
         }
@@ -46,7 +52,7 @@ public class EventService implements MessageHandler{
 
     /**
      * Method that delete entity invite from DB if user accept invite
-     * @param message
+     * @param message - "accept" keyword following by space and json object of Invite entity
      */
     public void receiveAccept(String message) {
         try {
@@ -68,8 +74,8 @@ public class EventService implements MessageHandler{
     }
 
     /**
-     * send event info to notify-service
-     * @param message
+     * Method which send notification about event
+     * @param message - json object of Event entity
      */
     @Override
     public void sendMessage(String message) {
@@ -88,8 +94,19 @@ public class EventService implements MessageHandler{
         }
     }
 
+    /**
+     * Send invites to everyone (except of already invited) if event has free spaces
+     * @param event - event entity
+     * @throws JsonProcessingException
+     */
     private void sendPublicInvites(Event event) throws JsonProcessingException {
-        List<String> usersIds = userService.getUsers()
+        Optional<List<User>> users = userService.getUsers();
+        if (!users.isPresent()) {
+            log.error("Can't get users info");
+            return;
+        }
+        List<String> usersIds = users
+                .get()
                 .stream()
                 .map(User::getId)
                 .filter(id -> !event.getInvitedIds().contains(id))
@@ -102,7 +119,13 @@ public class EventService implements MessageHandler{
     }
 
     private void sendPersonalInvites(Event event) throws JsonProcessingException {
-        saveInvites(getInvites(event));
+        Optional<List<Invite>> invites = saveInvites(getInvites(event));
+        if (invites.isPresent()) {
+            log.info("invites of event '" + event.getTitle() + "' have been saved");
+        }
+        else {
+            log.error("invites of event '" + event.getTitle() + "' have not been saved");
+        }
         MessageDTO messageDTO = makeMessage(
                 event, "Вас пригласили на мероприятие '" + event.getTitle() + "'");
         redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
@@ -129,7 +152,7 @@ public class EventService implements MessageHandler{
     }
 
     /**
-     * Get the list of invites from event's server message
+     * Get the list of invites from event entity
      * @param event
      * @return List of invite
      */
@@ -146,11 +169,11 @@ public class EventService implements MessageHandler{
     }
 
     /**
-     * Save the list of objects in the database
-     * @param invites
-     * @return list of invits that was saved in database
+     * Save the list of invites in the database
+     * @param invites - list of invite entity
+     * @return list of invites that was saved in database
      */
-    public List<Invite> saveInvites(List<Invite> invites) {
-        return inviteRepo.saveAll(invites);
+    public Optional<List<Invite>> saveInvites(List<Invite> invites) {
+        return Optional.of(inviteRepo.saveAll(invites));
     }
 }

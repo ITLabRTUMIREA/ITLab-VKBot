@@ -18,15 +18,15 @@ public class Notify {
     @Bean
     public RestTemplate getRestTemplate() {
         RestTemplate restTemplate = new RestTemplate();
-        List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();
-        //Add the Jackson Message converter
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-
-        // Note: here we are making this converter to process any kind of response,
-        // not only application/*json, which is the default behaviour
-        converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));
-        messageConverters.add(converter);
-        restTemplate.setMessageConverters(messageConverters);
+//        List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();
+//        //Add the Jackson Message converter
+//        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+//
+//        // Note: here we are making this converter to process any kind of response,
+//        // not only application/*json, which is the default behaviour
+//        converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));
+//        messageConverters.add(converter);
+//        restTemplate.setMessageConverters(messageConverters);
         return restTemplate;
     }
 

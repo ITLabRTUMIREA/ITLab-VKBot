@@ -11,6 +11,7 @@ import ru.rtuitlab.notify.models.User;
 import ru.rtuitlab.notify.redis.RedisPublisher;
 
 import java.util.Collections;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -29,12 +30,20 @@ public class ReportService implements MessageHandler{
     @Value("${database.redis.sendChannel}")
     private String channel;
 
+    /**
+     * Handle messages in comments channel in redis
+     * @param message - String, should be json object of Report entity
+     */
     @Override
     public void handleMessage(String message) {
-        System.out.println("ReportService here! + " + message);
+        log.info("Report service handle message: " + message);
         sendMessage(message);
     }
 
+    /**
+     * Method which send notification about report if another user wrote about him
+     * @param message - Json object of Report Entity
+     */
     @Override
     public void sendMessage(String message) {
         try {
@@ -43,12 +52,12 @@ public class ReportService implements MessageHandler{
                 log.info("User " + report.getSenderId() + " wrote report about him/herself");
                 return;
             }
-            User user = userService.getUser(report.getSenderId());
-            if (user == null) {
+            Optional<User> user = userService.getUser(report.getSenderId());
+            if (!user.isPresent()) {
                 log.info("user " + report.getSenderId() + " not found");
                 return;
             }
-            String sender = user.getLastName() + ' ' + user.getFirstName();
+            String sender = user.get().getLastName() + ' ' + user.get().getFirstName();
             MessageDTO messageDTO = makeMessage(report, sender);
             redisPublisher.publish(channel, om.writeValueAsString(messageDTO));
             log.info("report publish: " + messageDTO);
@@ -61,7 +70,6 @@ public class ReportService implements MessageHandler{
     public MessageDTO makeMessage(Report report, String user) {
         Message message = new Message();
         message.setTitle("О вас написали отчет");
-        message.setDate(report.getDate());
         message.setBody(
                 String.format("Пользователь %s написал о вас отчет",
                         user));

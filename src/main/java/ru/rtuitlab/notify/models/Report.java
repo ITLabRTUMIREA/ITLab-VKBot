@@ -6,5 +6,4 @@ import lombok.Data;
 public class Report {
     private String senderId;
     private String receiverId;
-    private String date;
 }

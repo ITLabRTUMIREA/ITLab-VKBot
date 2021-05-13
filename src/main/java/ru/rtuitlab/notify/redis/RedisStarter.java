@@ -1,5 +1,6 @@
 package ru.rtuitlab.notify.redis;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.rtuitlab.notify.services.*;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+@Slf4j
 @Service
 public class RedisStarter {
 
@@ -47,6 +49,7 @@ public class RedisStarter {
         executorService.execute(new Listener(eventService, channels.get(1)));
         executorService.execute(new Listener(commentService, channels.get(2)));
 //        executorService.execute(new Listener(testService, channels.get(3)));
+        log.info("All listeners have been executed");
     }
 
 
