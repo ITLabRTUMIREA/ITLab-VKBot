@@ -57,7 +57,7 @@ public class CommentService implements MessageHandler {
                 comment.getSender(), comment.getReport()));
 
         MessageDTO messageDTO = new MessageDTO();
-        messageDTO.setUsers(Collections.singletonList(comment.getUser()));
+        messageDTO.setUsers(Collections.singletonList(comment.getUserId()));
         messageDTO.setMessage(message);
         return messageDTO;
     }

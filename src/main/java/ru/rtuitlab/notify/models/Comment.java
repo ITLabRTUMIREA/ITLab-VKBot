@@ -6,5 +6,5 @@ import lombok.Data;
 public class Comment {
     private String sender;
     private String report;
-    private String user;
+    private String userId;
 }

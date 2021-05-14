@@ -60,7 +60,7 @@ public class EventService implements MessageHandler{
             Invite invite = om.readValue(obj, Invite.class);
             List<Invite> invites = inviteRepo.findAllByInvitedIdAndEvent(
                     invite.getInvitedId(), invite.getEvent());
-            if (invites != null) {
+            if (invites.size() != 0) {
                 inviteRepo.deleteAll(invites);
                 log.info("user " + invite.getInvitedId()
                         + " accepted invite for '" + invite.getEvent() + "' event");
