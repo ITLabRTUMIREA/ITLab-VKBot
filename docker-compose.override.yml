@@ -19,12 +19,13 @@ services:
 
   notify:
     build:
-      context: ${BACK_NOTIFY_CONTEXT-.}/deploy/.
+      context: ${BACK_NOTIFY_CONTEXT-.}/.
     ports:
       - 8080:8080
     environment:
       - ITLAB_NOTIFY_DB_HOST=db
       - ITLAB_NOTIFY_REDIS_HOST=redis
+      - ITLAB_NOTIFY_AUTH_TOKEN=YOUR_TOKEN
     depends_on:
       - db
       - redis
