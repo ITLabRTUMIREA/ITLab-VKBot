@@ -1,47 +1,121 @@
 trigger:
 - master
 - develop
+
 pool:
   vmImage: 'ubuntu-latest'
+
 name: $(BuildID)-$(Build.SourceBranchName)
 
-steps:
-- task: Gradle@2
-  inputs:
-    workingDirectory: ''
-    gradleWrapperFile: 'gradlew'
-    gradleOptions: '-Xmx3072m'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.8'
-    jdkArchitectureOption: 'x64'
-    publishJUnitResults: true
-    testResultsFiles: '**/TEST-*.xml'
-    tasks: 'build'
+resources:
+- repo: self
 
-- task: CopyFiles@2
-  displayName: 'copy libs'
-  inputs:
-    SourceFolder: 'build/libs/'
-    Contents: '**'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+variables:
+  ${{ if notIn(variables['Build.SourceBranchName'], 'master', 'develop') }}:
+    buildImage: false
+    deployService: false
+    deployEnvironment: 'no'
+    imageTags: 'no'
+    serviceName: 'no'
+  ${{ if eq(variables['Build.SourceBranchName'], 'develop') }}:
+    buildImage: true
+    deployService: true
+    deployEnvironment: development
+    imageTags: |
+      $(Build.BuildId)
+      develop
+    serviceName: itlab-develop_notify
+  ${{ if eq(variables['Build.SourceBranchName'], 'master') }}:
+    buildImage: true
+    deployService: true
+    deployEnvironment: production
+    imageTags: |
+      $(Build.BuildId)
+      latest
+    serviceName: itlab_notify
 
-- task: CopyFiles@2
-  displayName: 'copy resources'
-  inputs:
-    SourceFolder: 'build/resources/main/'
-    Contents: '**'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/resources'
-
-- task: PublishBuildArtifacts@1
-  displayName: 'publish itlab-notify-build'
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'itlab-notify-build'
-    publishLocation: 'Container'
-
-- task: PublishBuildArtifacts@1
-  displayName: 'publish itlab-notify-deploy'
-  inputs:
-    PathtoPublish: 'deploy'
-    ArtifactName: 'itlab-notify-deploy'
-    publishLocation: 'Container'
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: Build
+    steps:
+    - task: Gradle@2
+      displayName: Build jar
+      inputs:
+        workingDirectory: ''
+        gradleWrapperFile: 'gradlew'
+        gradleOptions: '-Xmx3072m'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.8'
+        jdkArchitectureOption: 'x64'
+        publishJUnitResults: true
+        testResultsFiles: '**/TEST-*.xml'
+        tasks: 'build'
+    - task: CopyFiles@2
+      displayName: 'copy libs'
+      inputs:
+        SourceFolder: 'build/libs/'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'copy resources'
+      inputs:
+        SourceFolder: 'build/resources/main/'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/resources'
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: 'deploy'
+        Contents: 'Dockerfile'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishBuildArtifacts@1
+      displayName: 'publish itlab-notify-build'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'itlab-notify-build'
+        publishLocation: 'Container'
+- stage: packInDocker
+  condition: and(succeeded(), ${{variables.buildImage}})
+  jobs:
+  - job: packApi
+    steps:
+      - checkout: none
+      - download: current
+        artifact: itlab-notify-build
+      - task: Docker@2
+        displayName: Build image for docker hub
+        inputs:
+          containerRegistry: 'rtuitlab connection by admin'
+          repository: 'rtuitlab/itlab-notify'
+          command: 'buildAndPush'
+          Dockerfile: '$(Pipeline.Workspace)/itlab-notify-build/Dockerfile'
+          buildContext: '$(Pipeline.Workspace)/itlab-notify-build'
+          tags: ${{variables.imageTags}}
+      - task: Docker@2
+        displayName: Build image for private docker registry
+        inputs:
+          containerRegistry: 'private rtuitlab registry'
+          repository: 'rtuitlab/itlab-notify'
+          command: 'buildAndPush'
+          Dockerfile: '$(Pipeline.Workspace)/itlab-notify-build/Dockerfile'
+          buildContext: '$(Pipeline.Workspace)/itlab-notify-build'
+          tags: ${{variables.imageTags}}
+- stage: UpdateService
+  condition: and(succeeded(), ${{variables.deployService}})
+  jobs:
+  - deployment: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{variables.deployEnvironment}}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - download: none
+            - task: SSH@0
+              inputs:
+                sshEndpoint: 'swarm manager'
+                runOptions: 'commands'
+                commands: 'docker service update --image registry.rtuitlab.dev/rtuitlab/itlab-notify:$(Build.BuildId) ${{variables.serviceName}} --with-registry-auth'
+                readyTimeout: '20000'

@@ -1,0 +1,31 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:13.2-alpine
+    environment:
+      - POSTGRES_PASSWORD=0000
+      - POSTGRES_DB=notify
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:6.2.3-alpine
+    command: redis-server --requirepass admin
+    ports:
+    - 6379:6379
+
+  notify:
+    build:
+      context: ${BACK_NOTIFY_CONTEXT-.}/.
+    ports:
+      - 8080:8080
+    environment:
+      - ITLAB_NOTIFY_DB_HOST=db
+      - ITLAB_NOTIFY_REDIS_HOST=redis
+      - ITLAB_NOTIFY_AUTH_TOKEN=YOUR_TOKEN
+    depends_on:
+      - db
+      - redis

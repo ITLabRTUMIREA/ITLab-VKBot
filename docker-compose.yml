@@ -1,0 +1,5 @@
+version: "3.9"
+
+services:
+  notify:
+    image: rtuitlab/itlab-notify
