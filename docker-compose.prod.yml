@@ -1,6 +1,7 @@
 version: '3.9'
 services:
   notify:
+    image: registry.rtuitlab.dev/rtuitlab/itlab-notify:${SERVICE_VERSION:-latest}
     environment:
       - ITLAB_NOTIFY_PORT=5511
       - ITLAB_NOTIFY_REDIS_HOST=${ITLAB_NOTIFY_REDIS_HOST?Provide redis host in ITLAB_NOTIFY_REDIS_HOST}
